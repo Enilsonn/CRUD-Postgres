@@ -11,40 +11,25 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-type ClientHandler struct {
-	Repo *repository.ClientRepository
+type ProductHandler struct {
+	Repo *repository.ProductRepository
 }
 
-func NewClientHandler(repo *repository.ClientRepository) *ClientHandler {
-	return &ClientHandler{
+func NewProductHandler(repo *repository.ProductRepository) *ProductHandler {
+	return &ProductHandler{
 		Repo: repo,
 	}
 }
 
-func (h *ClientHandler) CreateClient(w http.ResponseWriter, r *http.Request) {
+func (h *ProductHandler) CreateClientProduct(w http.ResponseWriter, r *http.Request) {
 	type req struct {
-		Name  string `json:"name"`
-		Email string `json:"email"`
-		Phone string `json:"phone"`
+		PlanName      string  `json:"plan_name"`
+		PriceCents    float32 `json:"price_cents"`
+		AmountCredits int     `json:"amount_credits"`
 	}
-	client, err := utils.DecodeJson[req](r)
+	product, err := utils.DecodeJson[req](r)
 	if err != nil {
-		utils.EncodeJson(w, r,
-			http.StatusBadRequest,
-			map[string]any{
-				"error":   true,
-				"message": fmt.Sprintf("invalid request body: %v", err),
-			})
-		return
-	}
-	// não haverá verificação se os campos são válidos
-
-	clientCompleted := model.NewCliente(client.Name, client.Email, client.Phone)
-
-	id, err := h.Repo.CreateClient(*clientCompleted)
-	if err != nil {
-		utils.EncodeJson(w, r,
-			http.StatusInternalServerError,
+		utils.EncodeJson(w, r, http.StatusBadRequest,
 			map[string]any{
 				"error":   true,
 				"message": err,
@@ -52,28 +37,41 @@ func (h *ClientHandler) CreateClient(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	clientCompleted.ID = id
+	// não haverá verificação se os campos são válidos
+	productCompleted := model.NewClientProduct(product.PlanName, product.PriceCents, product.AmountCredits)
+
+	id, err := h.Repo.CreateClientProduct(*productCompleted)
+	if err != nil {
+		utils.EncodeJson(w, r, http.StatusInternalServerError,
+			map[string]any{
+				"error":   true,
+				"message": err,
+			})
+		return
+	}
+
+	productCompleted.ID = id
 
 	utils.EncodeJson(w, r, http.StatusCreated,
 		map[string]any{
 			"error":   false,
-			"message": "client create successfully",
-		},
-	)
+			"message": "product created successfully",
+		})
+
 }
 
-func (h *ClientHandler) GetClientByID(w http.ResponseWriter, r *http.Request) {
+func (h *ProductHandler) GetClientByID(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusBadRequest,
 			map[string]any{
 				"error":   true,
-				"message": fmt.Sprintf("invalid id: %v", err),
+				"message": err,
 			})
 		return
 	}
 
-	client, err := h.Repo.GetClientByID(int64(id))
+	product, err := h.Repo.GetProductByID(int64(id))
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusNotFound,
 			map[string]any{
@@ -84,11 +82,11 @@ func (h *ClientHandler) GetClientByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.EncodeJson(w, r, http.StatusOK,
-		client,
+		product,
 	)
 }
 
-func (h *ClientHandler) GetClientByName(w http.ResponseWriter, r *http.Request) {
+func (h *ProductHandler) GetClientProductByName(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "name")
 	if name == "" {
 		utils.EncodeJson(w, r, http.StatusBadRequest,
@@ -99,7 +97,7 @@ func (h *ClientHandler) GetClientByName(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	client, err := h.Repo.GetClientByName(name)
+	product, err := h.Repo.GetClientProductByName(name)
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusNotFound,
 			map[string]any{
@@ -110,12 +108,12 @@ func (h *ClientHandler) GetClientByName(w http.ResponseWriter, r *http.Request) 
 	}
 
 	utils.EncodeJson(w, r, http.StatusOK,
-		client,
+		product,
 	)
 }
 
-func (h *ClientHandler) GetAllClients(w http.ResponseWriter, r *http.Request) {
-	clients, err := h.Repo.GetAllClients()
+func (h *ProductHandler) GetAllClientProduct(w http.ResponseWriter, r *http.Request) {
+	products, err := h.Repo.GetAllClientProduct()
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusNotFound,
 			map[string]any{
@@ -126,10 +124,11 @@ func (h *ClientHandler) GetAllClients(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.EncodeJson(w, r, http.StatusOK,
-		clients)
+		products,
+	)
 }
 
-func (h *ClientHandler) UpdateClients(w http.ResponseWriter, r *http.Request) {
+func (h *ProductHandler) UpdateClientProduct(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusBadRequest,
@@ -140,8 +139,7 @@ func (h *ClientHandler) UpdateClients(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// não impede que o cliente passe id ou status (o que não é permitido a ele)
-	client, err := utils.DecodeJson[model.Client](r)
+	product, err := utils.DecodeJson[model.ClientProduct](r)
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusBadRequest,
 			map[string]any{
@@ -151,7 +149,7 @@ func (h *ClientHandler) UpdateClients(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rowsAffected, err := h.Repo.UpdateClients(int64(id), client)
+	rowsAffected, err := h.Repo.UpdateClientProduct(int64(id), product)
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusInternalServerError,
 			map[string]any{
@@ -165,20 +163,20 @@ func (h *ClientHandler) UpdateClients(w http.ResponseWriter, r *http.Request) {
 		utils.EncodeJson(w, r, http.StatusOK,
 			map[string]any{
 				"error":   false,
-				"message": fmt.Sprintf("client %d updated successfully", id),
+				"message": fmt.Sprintf("product %d updated successfully", id),
 			},
 		)
 	} else {
 		utils.EncodeJson(w, r, http.StatusOK,
 			map[string]any{
 				"error":   false,
-				"message": fmt.Sprintf("%d clients updated successfully", rowsAffected),
+				"message": fmt.Sprintf("%d products updated successfully", rowsAffected),
 			},
 		)
 	}
 }
 
-func (h *ClientHandler) DeleteClient(w http.ResponseWriter, r *http.Request) {
+func (h *ProductHandler) DeleteClientProduct(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusBadRequest,
@@ -189,7 +187,7 @@ func (h *ClientHandler) DeleteClient(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = h.Repo.DeleteClient(int64(id)); err != nil {
+	if err = h.Repo.DeleteClientProduct(int64(id)); err != nil {
 		utils.EncodeJson(w, r, http.StatusInternalServerError,
 			map[string]any{
 				"error":   true,
@@ -199,5 +197,4 @@ func (h *ClientHandler) DeleteClient(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.EncodeJson(w, r, http.StatusNoContent, map[string]any{})
-
 }

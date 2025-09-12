@@ -22,7 +22,7 @@ func NewCliente(name, email, phone string) *Client {
 }
 
 type ClientProduct struct {
-	ID            int     `json:"id"`
+	ID            int64   `json:"id"`
 	PlanName      string  `json:"plan_name"`
 	PriceCents    float32 `json:"price_cents"`
 	AmountCredits int     `json:"amount_credits"`
