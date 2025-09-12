@@ -1,8 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"net/http"
 
+	"github.com/Enilsonn/CRUD-Postgres/cmd/configs"
 	"github.com/Enilsonn/CRUD-Postgres/database"
 	"github.com/Enilsonn/CRUD-Postgres/internal/controller"
 	"github.com/Enilsonn/CRUD-Postgres/internal/repository"
@@ -11,6 +14,11 @@ import (
 )
 
 func main() {
+	err := configs.Load()
+	if err != nil {
+		panic(err)
+	}
+
 	conn, err := database.OpenConecction()
 	if err != nil {
 		log.Fatalf("No possible to connect with database: %v", err)
@@ -43,4 +51,8 @@ func main() {
 		r.Put("/{id}", productHandler.UpdateClientProduct)
 		r.Put("/{id}", productHandler.DeleteClientProduct)
 	})
+
+	if err := http.ListenAndServe(fmt.Sprintf(":%s", configs.GetDB().Port), r); err != nil {
+		log.Fatalf("Não foi possível iniciar o servidor: %v", err)
+	}
 }

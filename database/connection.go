@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Enilsonn/CRUD-Postgres/cmd/configs"
+	_ "github.com/lib/pq"
 )
 
 func OpenConecction() (*sql.DB, error) {
