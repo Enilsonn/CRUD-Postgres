@@ -60,7 +60,7 @@ func (h *ProductHandler) CreateClientProduct(w http.ResponseWriter, r *http.Requ
 
 }
 
-func (h *ProductHandler) GetClientByID(w http.ResponseWriter, r *http.Request) {
+func (h *ProductHandler) GetProductByID(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusBadRequest,
