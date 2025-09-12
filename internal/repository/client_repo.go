@@ -15,7 +15,7 @@ func NewClientRepository(db *sql.DB) *ClientRepository {
 	return &ClientRepository{db: db}
 }
 
-func (r *ClientRepository) Create(client model.Client) (int64, error) {
+func (r *ClientRepository) CreateClient(client model.Client) (int64, error) {
 	sql := `INSERT INTO clients (name, email, phone, status,registration_data)
 			VALUES ($1, $2, $3, $4, $5)
 			RETURNING id
@@ -38,7 +38,7 @@ func (r *ClientRepository) Create(client model.Client) (int64, error) {
 	return id, nil
 }
 
-func (r *ClientRepository) GetByID(id int64) (*model.Client, error) {
+func (r *ClientRepository) GetClientByID(id int64) (*model.Client, error) {
 	sql := `SELECT id, name, email, phone, status, registration_data
 			FROM clients
 			WHERE id=$1
@@ -65,10 +65,10 @@ func (r *ClientRepository) GetByID(id int64) (*model.Client, error) {
 	return &client, nil
 }
 
-func (r *ClientRepository) GetAll() ([]model.Client, error) {
+func (r *ClientRepository) GetAllClients() ([]model.Client, error) {
 	sql := `SELECT id, name, email, phone, status, registration_data
 			FROM clients
-			WHERE status='true'
+			WHERE status=true
 	`
 
 	rows, err := r.db.Query(
@@ -101,7 +101,7 @@ func (r *ClientRepository) GetAll() ([]model.Client, error) {
 	return clients, nil
 }
 
-func (r *ClientRepository) GetByName(name string) ([]model.Client, error) {
+func (r *ClientRepository) GetClientByName(name string) ([]model.Client, error) {
 	sql := `SELECT id, name, email, phone, status, registration_data
 			FROM clients
 			WHERE name=$1
@@ -135,7 +135,7 @@ func (r *ClientRepository) GetByName(name string) ([]model.Client, error) {
 	return clients, nil
 }
 
-func (r *ClientRepository) Update(id int64, client model.Client) (int64, error) {
+func (r *ClientRepository) UpdateClients(id int64, client model.Client) (int64, error) {
 	sql := `UPDATE clients
 			SET name=$1, email=$2, phone=$3
 			WHERE id=$4
@@ -153,7 +153,7 @@ func (r *ClientRepository) Update(id int64, client model.Client) (int64, error) 
 
 	rowsAffected, err := resp.RowsAffected()
 	if err != nil {
-		return 0, fmt.Errorf("not possivel check rows affected: %v", err)
+		return 0, fmt.Errorf("not possivel check rows affected on update: %v", err)
 	}
 	if rowsAffected == 0 {
 		return 0, fmt.Errorf("no client found with id %d was updated", id)
@@ -162,7 +162,7 @@ func (r *ClientRepository) Update(id int64, client model.Client) (int64, error) 
 	return rowsAffected, nil
 }
 
-func (r *ClientRepository) Delete(id int64) error {
+func (r *ClientRepository) DeleteClient(id int64) error {
 	sql := `UPDATE clients
 			SET status=false
 			WHERE id=$1
@@ -178,7 +178,7 @@ func (r *ClientRepository) Delete(id int64) error {
 
 	rowsAffected, err := resp.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("error to check rows affected: %v", err)
+		return fmt.Errorf("error to check rows affected on delete: %v", err)
 	}
 	if rowsAffected == 0 {
 		return fmt.Errorf("no client found with id %d was deleted", id)
