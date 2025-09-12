@@ -7,22 +7,23 @@ import (
 	"github.com/Enilsonn/CRUD-Postgres/internal/model"
 )
 
-type ClientProductRepository struct {
+type ProductRepository struct {
 	db *sql.DB
 }
 
-func NewClientProductRepository(db *sql.DB) *ClientProductRepository {
-	return &ClientProductRepository{db: db}
+func NewProductRepository(db *sql.DB) *ProductRepository {
+	return &ProductRepository{db: db}
 }
 
-func (r *ClientProductRepository) CreateClientProduct(client_product model.ClientProduct) (int64, error) {
-	sql := `INSERT INTO client_product (plan_name, price_cents, amount_credits, status)
-			VALUES ($1, $2, $3, %4)
+func (r *ProductRepository) CreateClientProduct(client_product model.ClientProduct) (int64, error) {
+	sql := `INSERT INTO client_product (id, plan_name, price_cents, amount_credits, status)
+			VALUES ($1, $2, $3, $4, $5)
 			RETURNING id
 	`
 	var id int64
 	err := r.db.QueryRow(
 		sql,
+		client_product.ID, // chave estrangeira
 		client_product.PlanName,
 		client_product.PriceCents,
 		client_product.AmountCredits,
@@ -35,7 +36,7 @@ func (r *ClientProductRepository) CreateClientProduct(client_product model.Clien
 	return id, nil
 }
 
-func (r *ClientProductRepository) GetClientProductByID(id int64) (*model.ClientProduct, error) {
+func (r *ProductRepository) GetProductByID(id int64) (*model.ClientProduct, error) {
 	sql := `SELECT id, plan_name, price_cents, amount_credits, status
 			FROM client_product
 			WHERE id=$1
@@ -59,7 +60,7 @@ func (r *ClientProductRepository) GetClientProductByID(id int64) (*model.ClientP
 	return &client_product, nil
 }
 
-func (r *ClientProductRepository) GetClientProductByName(plan_name string) (*model.ClientProduct, error) {
+func (r *ProductRepository) GetClientProductByName(plan_name string) (*model.ClientProduct, error) {
 	sql := `SELECT id, plan_name, price_cents, amount_credits, status
 			FROM client_product
 			WHERE name=$1
@@ -83,7 +84,7 @@ func (r *ClientProductRepository) GetClientProductByName(plan_name string) (*mod
 	return &client_product, nil
 }
 
-func (r *ClientProductRepository) GetAllClientProduct() ([]model.ClientProduct, error) {
+func (r *ProductRepository) GetAllClientProduct() ([]model.ClientProduct, error) {
 	sql := `SELECT id, plan_name, price_cents, amount_credits, status
 			FROM client_product
 			WHERE status=true
@@ -117,7 +118,7 @@ func (r *ClientProductRepository) GetAllClientProduct() ([]model.ClientProduct, 
 	return client_products, nil
 }
 
-func (r *ClientProductRepository) UpdateClientProduct(id int64, client_product model.ClientProduct) (int64, error) {
+func (r *ProductRepository) UpdateClientProduct(id int64, client_product model.ClientProduct) (int64, error) {
 	sql := `UPDATE client_product
 			SET plan_name=$1, price_cents=$2, amount_credits=$3
 			WHERE id=$4
@@ -145,7 +146,7 @@ func (r *ClientProductRepository) UpdateClientProduct(id int64, client_product m
 	return rowsAffected, nil
 }
 
-func (r *ClientProductRepository) DeleteClientProduct(id int64) error {
+func (r *ProductRepository) DeleteClientProduct(id int64) error {
 	sql := `UPDATE client_product
 			SET status=false
 			WHERE id=$1
