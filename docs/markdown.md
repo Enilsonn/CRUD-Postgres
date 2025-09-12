@@ -37,10 +37,10 @@ classDiagram
         + DeleteClient(id int64) error
     }
 
-    class ClientProductRepository {
+    class ProductRepository {
         <<Repository>>
         - db: *sql.DB
-        + NewClientProductRepository(db *sql.DB) *ClientProductRepository
+        + NewProductRepository(db *sql.DB) *ProductRepository
         + CreateClientProduct(product model.ClientProduct) int64
         + GetClientProductByID(id int64) *model.ClientProduct
         + GetClientProductByName(plan_name string) *model.ClientProduct
@@ -50,5 +50,5 @@ classDiagram
     }
 
     ClientRepository ..> Client : "use"
-    ClientProductRepository ..> ClientProduct : "use"
+    ProductRepository ..> ClientProduct : "use"
 ```
