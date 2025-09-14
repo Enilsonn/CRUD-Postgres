@@ -28,10 +28,10 @@ func init() {
 	viper.SetDefault("database.port", "5432")
 }
 
-func Load() error {
+func Load(path string) error {
 	viper.SetConfigName("config")
 	viper.SetConfigType("toml")
-	viper.AddConfigPath(".") // pq o ideal é que esse arquivo com as variaveis sempre esteja ao lado do binário
+	viper.AddConfigPath(path) // pq o ideal é que esse arquivo com as variaveis sempre esteja ao lado do binário
 	err := viper.ReadInConfig()
 	if err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {

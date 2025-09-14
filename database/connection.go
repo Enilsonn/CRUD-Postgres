@@ -8,8 +8,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func OpenConecction() (*sql.DB, error) {
-	conf := configs.GetDB()
+func OpenConecction(conf configs.DBConf) (*sql.DB, error) {
 
 	sc := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=desable",
 		conf.Host, conf.Port, conf.User, conf.Pass, conf.Database)

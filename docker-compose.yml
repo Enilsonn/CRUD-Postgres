@@ -6,7 +6,7 @@ services:
          - 5432:5432
       environment:
          POSTGRES_USER: user
-         POSTGRES_PASSWORD: 1234
+         POSTGRES_PASSWORD: 1122
          POSTGRES_DB: chatgpt
       volumes: 
          - db:/var/lib/postgresql/data
