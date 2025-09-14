@@ -14,12 +14,12 @@ import (
 )
 
 func main() {
-	err := configs.Load()
+	err := configs.Load(".")
 	if err != nil {
 		panic(err)
 	}
 
-	conn, err := database.OpenConecction()
+	conn, err := database.OpenConecction(configs.GetDB())
 	if err != nil {
 		log.Fatalf("No possible to connect with database: %v", err)
 	}
