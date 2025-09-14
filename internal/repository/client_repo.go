@@ -42,6 +42,7 @@ func (r *ClientRepository) GetClientByID(id int64) (*model.Client, error) {
 	sql := `SELECT id, name, email, phone, status, registration_data
 			FROM clients
 			WHERE id=$1
+			AND status=true
 	`
 
 	var client model.Client
@@ -105,6 +106,7 @@ func (r *ClientRepository) GetClientByName(name string) ([]model.Client, error) 
 	sql := `SELECT id, name, email, phone, status, registration_data
 			FROM clients
 			WHERE name=$1
+			AND status=true
 	`
 
 	rows, err := r.db.Query(sql, name)
@@ -139,6 +141,7 @@ func (r *ClientRepository) UpdateClients(id int64, client model.Client) (int64, 
 	sql := `UPDATE clients
 			SET name=$1, email=$2, phone=$3
 			WHERE id=$4
+			AND satus=true
 	`
 	resp, err := r.db.Exec(
 		sql,

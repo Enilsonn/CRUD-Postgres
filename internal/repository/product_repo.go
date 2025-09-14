@@ -40,6 +40,7 @@ func (r *ProductRepository) GetProductByID(id int64) (*model.ClientProduct, erro
 	sql := `SELECT id, plan_name, price_cents, amount_credits, status
 			FROM client_product
 			WHERE id=$1
+			AND status=true
 	`
 	var client_product model.ClientProduct
 	row := r.db.QueryRow(
@@ -64,6 +65,7 @@ func (r *ProductRepository) GetClientProductByName(plan_name string) (*model.Cli
 	sql := `SELECT id, plan_name, price_cents, amount_credits, status
 			FROM client_product
 			WHERE name=$1
+			AND status=true
 	`
 	var client_product model.ClientProduct
 	row := r.db.QueryRow(
@@ -122,6 +124,7 @@ func (r *ProductRepository) UpdateClientProduct(id int64, client_product model.C
 	sql := `UPDATE client_product
 			SET plan_name=$1, price_cents=$2, amount_credits=$3
 			WHERE id=$4
+			AND status=true
 	`
 
 	resp, err := r.db.Exec(

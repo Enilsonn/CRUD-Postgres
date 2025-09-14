@@ -40,7 +40,7 @@ func main() {
 		r.Get("/{id}", clientHandler.GetClientByID)
 		r.Get("/name", clientHandler.GetClientByName)
 		r.Put("/{id}", clientHandler.UpdateClients)
-		r.Put("/{id}", clientHandler.DeleteClient)
+		r.Delete("/{id}", clientHandler.DeleteClient)
 	})
 
 	r.Route("/product", func(r chi.Router) {
@@ -49,7 +49,7 @@ func main() {
 		r.Get("/{id}", productHandler.GetProductByID)
 		r.Get("/name", productHandler.GetClientProductByName)
 		r.Put("/{id}", productHandler.UpdateClientProduct)
-		r.Put("/{id}", productHandler.DeleteClientProduct)
+		r.Delete("/{id}", productHandler.DeleteClientProduct)
 	})
 
 	if err := http.ListenAndServe(fmt.Sprintf(":%s", configs.GetDB().Port), r); err != nil {
