@@ -17,7 +17,7 @@ import (
 )
 
 func main() {
-	err := configs.Load()
+	err := configs.Load("./cmd/main")
 	if err != nil {
 		panic(err)
 	}
@@ -87,7 +87,24 @@ func main() {
 
 	r.Post("/api/usage", walletHandler.ProcessUsage)
 
-	if err := http.ListenAndServe(fmt.Sprintf(":%s", configs.GetServerPort()), r); err != nil {
+	// Serve the admin dashboard
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/ui/", http.StatusFound)
+	})
+	r.Get("/ui", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		http.ServeFile(w, r, "./ui/index.html")
+	})
+	r.Get("/ui/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		http.ServeFile(w, r, "./ui/index.html")
+	})
+
+	serverPort := configs.GetServerPort()
+	log.Printf("Server starting on port %s...", serverPort)
+	log.Printf("Health check endpoint: http://localhost:%s/api/health", serverPort)
+
+	if err := http.ListenAndServe(fmt.Sprintf(":%s", serverPort), r); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }
