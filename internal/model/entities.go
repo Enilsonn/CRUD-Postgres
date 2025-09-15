@@ -21,19 +21,44 @@ func NewCliente(name, email, phone string) *Client {
 	}
 }
 
-type ClientProduct struct {
-	ID            int64   `json:"id"`
-	PlanName      string  `json:"plan_name"`
-	PriceCents    float32 `json:"price_cents"`
-	AmountCredits int     `json:"amount_credits"`
-	Status        bool    `json:"status"`
+type Plan struct {
+	ID            int64  `json:"id"`
+	PlanName      string `json:"plan_name"`
+	PriceCents    int64  `json:"price_cents"`
+	AmountCredits int    `json:"amount_credits"`
+	Status        bool   `json:"status"`
 }
 
-func NewClientProduct(plan_name string, price_cents float32, amount_credites int) *ClientProduct {
-	return &ClientProduct{
-		PlanName:      plan_name,
-		PriceCents:    price_cents,
-		AmountCredits: amount_credites,
+func NewPlan(planName string, priceCents int64, amountCredits int) *Plan {
+	return &Plan{
+		PlanName:      planName,
+		PriceCents:    priceCents,
+		AmountCredits: amountCredits,
 		Status:        true,
 	}
+}
+
+type Wallet struct {
+	ClientID       int64 `json:"client_id"`
+	BalanceCredits int64 `json:"balance_credits"`
+}
+
+type CreditLedgerEntry struct {
+	ID               int64     `json:"id"`
+	ClientID         int64     `json:"client_id"`
+	Type             string    `json:"type"`
+	CreditsDelta     int64     `json:"credits_delta"`
+	PriceCentsDelta  int64     `json:"price_cents_delta"`
+	Meta             string    `json:"meta"`
+	CreatedAt        time.Time `json:"created_at"`
+}
+
+type UsageEvent struct {
+	ID               int64     `json:"id"`
+	ClientID         int64     `json:"client_id"`
+	Model            string    `json:"model"`
+	PromptTokens     int64     `json:"prompt_tokens"`
+	CompletionTokens int64     `json:"completion_tokens"`
+	CreditsSpent     int64     `json:"credits_spent"`
+	CreatedAt        time.Time `json:"created_at"`
 }

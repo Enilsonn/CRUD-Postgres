@@ -141,7 +141,7 @@ func (r *ClientRepository) UpdateClients(id int64, client model.Client) (int64, 
 	sql := `UPDATE clients
 			SET name=$1, email=$2, phone=$3
 			WHERE id=$4
-			AND satus=true
+			AND status=true
 	`
 	resp, err := r.db.Exec(
 		sql,

@@ -15,113 +15,111 @@ func NewProductRepository(db *sql.DB) *ProductRepository {
 	return &ProductRepository{db: db}
 }
 
-func (r *ProductRepository) CreateClientProduct(client_product model.ClientProduct) (int64, error) {
-	sql := `INSERT INTO client_product (id, plan_name, price_cents, amount_credits, status)
-			VALUES ($1, $2, $3, $4, $5)
+func (r *ProductRepository) CreateClientProduct(plan model.Plan) (int64, error) {
+	sql := `INSERT INTO plans (plan_name, price_cents, amount_credits, status)
+			VALUES ($1, $2, $3, $4)
 			RETURNING id
 	`
 	var id int64
 	err := r.db.QueryRow(
 		sql,
-		client_product.ID, // chave estrangeira
-		client_product.PlanName,
-		client_product.PriceCents,
-		client_product.AmountCredits,
-		client_product.Status,
+		plan.PlanName,
+		plan.PriceCents,
+		plan.AmountCredits,
+		plan.Status,
 	).Scan(&id)
 	if err != nil {
-		return 0, fmt.Errorf("error to create a new client-procuct: %v", err)
+		return 0, fmt.Errorf("error to create a new plan: %v", err)
 	}
 
 	return id, nil
 }
 
-func (r *ProductRepository) GetProductByID(id int64) (*model.ClientProduct, error) {
+func (r *ProductRepository) GetProductByID(id int64) (*model.Plan, error) {
 	sql := `SELECT id, plan_name, price_cents, amount_credits, status
-			FROM client_product
+			FROM plans
 			WHERE id=$1
 			AND status=true
 	`
-	var client_product model.ClientProduct
+	var plan model.Plan
 	row := r.db.QueryRow(
 		sql,
 		id,
 	)
 	err := row.Scan(
-		&client_product.ID,
-		&client_product.PlanName,
-		&client_product.PriceCents,
-		&client_product.AmountCredits,
-		&client_product.Status,
+		&plan.ID,
+		&plan.PlanName,
+		&plan.PriceCents,
+		&plan.AmountCredits,
+		&plan.Status,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error to found client-product with id %d: %v", id, err)
+		return nil, fmt.Errorf("error to found plan with id %d: %v", id, err)
 	}
 
-	return &client_product, nil
+	return &plan, nil
 }
 
-func (r *ProductRepository) GetClientProductByName(plan_name string) (*model.ClientProduct, error) {
+func (r *ProductRepository) GetClientProductByName(plan_name string) (*model.Plan, error) {
 	sql := `SELECT id, plan_name, price_cents, amount_credits, status
-			FROM client_product
-			WHERE name=$1
-			AND status=true
+			FROM plans
+			WHERE plan_name=$1
 	`
-	var client_product model.ClientProduct
+	var plan model.Plan
 	row := r.db.QueryRow(
 		sql,
 		plan_name,
 	)
 	err := row.Scan(
-		&client_product.ID,
-		&client_product.PlanName,
-		&client_product.PriceCents,
-		&client_product.AmountCredits,
-		&client_product.Status,
+		&plan.ID,
+		&plan.PlanName,
+		&plan.PriceCents,
+		&plan.AmountCredits,
+		&plan.Status,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error to found client-product with name %s: %v", plan_name, err)
+		return nil, fmt.Errorf("error to found plan with name %s: %v", plan_name, err)
 	}
 
-	return &client_product, nil
+	return &plan, nil
 }
 
-func (r *ProductRepository) GetAllClientProduct() ([]model.ClientProduct, error) {
+func (r *ProductRepository) GetAllClientProduct() ([]model.Plan, error) {
 	sql := `SELECT id, plan_name, price_cents, amount_credits, status
-			FROM client_product
+			FROM plans
 			WHERE status=true
 	`
 	rows, err := r.db.Query(
 		sql,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error to found client-product list: %v", err)
+		return nil, fmt.Errorf("error to found plans list: %v", err)
 	}
 	defer rows.Close()
 
-	var client_products []model.ClientProduct
+	var plans []model.Plan
 	for rows.Next() {
-		var client_product model.ClientProduct
+		var plan model.Plan
 
 		err := rows.Scan(
-			&client_product.ID,
-			&client_product.PlanName,
-			&client_product.PriceCents,
-			&client_product.AmountCredits,
-			&client_product.Status,
+			&plan.ID,
+			&plan.PlanName,
+			&plan.PriceCents,
+			&plan.AmountCredits,
+			&plan.Status,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("error to access client-product: %v", err)
+			return nil, fmt.Errorf("error to access plan: %v", err)
 		}
 
-		client_products = append(client_products, client_product)
+		plans = append(plans, plan)
 	}
 
-	return client_products, nil
+	return plans, nil
 }
 
-func (r *ProductRepository) UpdateClientProduct(id int64, client_product model.ClientProduct) (int64, error) {
-	sql := `UPDATE client_product
+func (r *ProductRepository) UpdateClientProduct(id int64, plan model.Plan) (int64, error) {
+	sql := `UPDATE plans
 			SET plan_name=$1, price_cents=$2, amount_credits=$3
 			WHERE id=$4
 			AND status=true
@@ -129,13 +127,13 @@ func (r *ProductRepository) UpdateClientProduct(id int64, client_product model.C
 
 	resp, err := r.db.Exec(
 		sql,
-		client_product.PlanName,
-		client_product.PriceCents,
-		client_product.AmountCredits,
+		plan.PlanName,
+		plan.PriceCents,
+		plan.AmountCredits,
 		id,
 	)
 	if err != nil {
-		return 0, fmt.Errorf("error to update client-product %d: %v", id, err)
+		return 0, fmt.Errorf("error to update plan %d: %v", id, err)
 	}
 
 	rowsAffected, err := resp.RowsAffected()
@@ -143,14 +141,14 @@ func (r *ProductRepository) UpdateClientProduct(id int64, client_product model.C
 		return 0, fmt.Errorf("not possivel check rows affected on update: %v", err)
 	}
 	if rowsAffected == 0 {
-		return 0, fmt.Errorf("no client-product found with id %d was updated", id)
+		return 0, fmt.Errorf("no plan found with id %d was updated", id)
 	}
 
 	return rowsAffected, nil
 }
 
 func (r *ProductRepository) DeleteClientProduct(id int64) error {
-	sql := `UPDATE client_product
+	sql := `UPDATE plans
 			SET status=false
 			WHERE id=$1
 	`
@@ -159,7 +157,7 @@ func (r *ProductRepository) DeleteClientProduct(id int64) error {
 		id,
 	)
 	if err != nil {
-		return fmt.Errorf("error to delete client-product %d: %v", id, err)
+		return fmt.Errorf("error to delete plan %d: %v", id, err)
 	}
 
 	rowsAffected, err := resp.RowsAffected()
@@ -167,7 +165,7 @@ func (r *ProductRepository) DeleteClientProduct(id int64) error {
 		return fmt.Errorf("not possivel check rows affected on delete: %v", err)
 	}
 	if rowsAffected == 0 {
-		return fmt.Errorf("no client-product found with id %d was updated", id)
+		return fmt.Errorf("no plan found with id %d was updated", id)
 	}
 
 	return nil
