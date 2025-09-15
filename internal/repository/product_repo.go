@@ -39,6 +39,7 @@ func (r *ProductRepository) GetProductByID(id int64) (*model.Plan, error) {
 	sql := `SELECT id, plan_name, price_cents, amount_credits, status
 			FROM plans
 			WHERE id=$1
+			AND status=true
 	`
 	var plan model.Plan
 	row := r.db.QueryRow(
@@ -121,6 +122,7 @@ func (r *ProductRepository) UpdateClientProduct(id int64, plan model.Plan) (int6
 	sql := `UPDATE plans
 			SET plan_name=$1, price_cents=$2, amount_credits=$3
 			WHERE id=$4
+			AND status=true
 	`
 
 	resp, err := r.db.Exec(
