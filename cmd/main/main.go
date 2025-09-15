@@ -17,7 +17,7 @@ import (
 )
 
 func main() {
-	err := configs.Load(".")
+	err := configs.Load()
 	if err != nil {
 		panic(err)
 	}

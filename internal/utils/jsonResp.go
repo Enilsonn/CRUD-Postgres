@@ -7,7 +7,7 @@ import (
 )
 
 func EncodeJson[T any](w http.ResponseWriter, r *http.Request, statusCode int, data T) error {
-	w.Header().Add("Content-Type", "Application-json")
+	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 
 	if err := json.NewEncoder(w).Encode(data); err != nil {
