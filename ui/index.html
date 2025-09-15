@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Administrativo CRUD</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .accordion-content.open {
+            max-height: 2000px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-8">Painel Administrativo</h1>
+        
+        <!-- Clients Section -->
+        <div class="bg-white rounded-lg shadow-md mb-6">
+            <button class="accordion-toggle w-full px-6 py-4 text-left font-semibold text-lg text-gray-800 bg-blue-50 hover:bg-blue-100 rounded-t-lg focus:outline-none" data-target="clients">
+                Gerenciamento de Clientes
+                <span class="float-right">▼</span>
+            </button>
+            <div id="clients" class="accordion-content">
+                <div class="p-6">
+                    <!-- Client Forms -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Create Client -->
+                        <div class="border rounded p-4">
+                            <h3 class="font-semibold mb-4">Criar Cliente</h3>
+                            <form id="createClientForm" class="space-y-3">
+                                <input type="text" id="clientName" placeholder="Nome" required class="w-full px-3 py-2 border rounded">
+                                <input type="email" id="clientEmail" placeholder="E-mail" required class="w-full px-3 py-2 border rounded">
+                                <input type="tel" id="clientPhone" placeholder="Telefone" required class="w-full px-3 py-2 border rounded">
+                                <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Criar Cliente</button>
+                            </form>
+                        </div>
+
+                        <!-- Search Client -->
+                        <div class="border rounded p-4">
+                            <h3 class="font-semibold mb-4">Buscar/Listar Clientes</h3>
+                            <div class="space-y-3">
+                                <input type="text" id="searchClientName" placeholder="Buscar por nome" class="w-full px-3 py-2 border rounded">
+                                <div class="flex space-x-2">
+                                    <button onclick="searchClientByName()" class="flex-1 bg-green-600 text-white py-2 rounded hover:bg-green-700">Buscar</button>
+                                    <button onclick="getAllClients()" class="flex-1 bg-gray-600 text-white py-2 rounded hover:bg-gray-700">Listar Todos</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Update/Delete Client -->
+                    <div class="mt-6 border rounded p-4">
+                        <h3 class="font-semibold mb-4">Atualizar/Excluir Cliente</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <input type="number" id="updateClientId" placeholder="ID do Cliente" class="w-full px-3 py-2 border rounded mb-2">
+                                <input type="text" id="updateClientName" placeholder="Nome" class="w-full px-3 py-2 border rounded mb-2">
+                                <input type="email" id="updateClientEmail" placeholder="E-mail" class="w-full px-3 py-2 border rounded mb-2">
+                                <input type="tel" id="updateClientPhone" placeholder="Telefone" class="w-full px-3 py-2 border rounded mb-2">
+                                <button onclick="updateClient()" class="w-full bg-yellow-600 text-white py-2 rounded hover:bg-yellow-700">Atualizar Cliente</button>
+                            </div>
+                            <div>
+                                <input type="number" id="deleteClientId" placeholder="ID do Cliente" class="w-full px-3 py-2 border rounded mb-2">
+                                <button onclick="deleteClient()" class="w-full bg-red-600 text-white py-2 rounded hover:bg-red-700">Excluir Cliente</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Results -->
+                    <div class="mt-6">
+                        <h3 class="font-semibold mb-2">Resultados:</h3>
+                        <pre id="clientResults" class="bg-gray-100 p-4 rounded text-sm max-h-64 overflow-auto"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Plans Section -->
+        <div class="bg-white rounded-lg shadow-md mb-6">
+            <button class="accordion-toggle w-full px-6 py-4 text-left font-semibold text-lg text-gray-800 bg-green-50 hover:bg-green-100 rounded-t-lg focus:outline-none" data-target="plans">
+                Gerenciamento de Planos
+                <span class="float-right">▼</span>
+            </button>
+            <div id="plans" class="accordion-content">
+                <div class="p-6">
+                    <!-- Plan Forms -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Create Plan -->
+                        <div class="border rounded p-4">
+                            <h3 class="font-semibold mb-4">Criar Plano</h3>
+                            <form id="createPlanForm" class="space-y-3">
+                                <input type="text" id="planName" placeholder="Nome do Plano" required class="w-full px-3 py-2 border rounded">
+                                <input type="number" id="planPriceCents" placeholder="Preço (centavos)" required class="w-full px-3 py-2 border rounded">
+                                <input type="number" id="planAmountCredits" placeholder="Quantidade de Créditos" required class="w-full px-3 py-2 border rounded">
+                                <button type="submit" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">Criar Plano</button>
+                            </form>
+                        </div>
+
+                        <!-- Search Plan -->
+                        <div class="border rounded p-4">
+                            <h3 class="font-semibold mb-4">Buscar/Listar Planos</h3>
+                            <div class="space-y-3">
+                                <input type="text" id="searchPlanName" placeholder="Buscar por nome" class="w-full px-3 py-2 border rounded">
+                                <div class="flex space-x-2">
+                                    <button onclick="searchPlanByName()" class="flex-1 bg-green-600 text-white py-2 rounded hover:bg-green-700">Buscar</button>
+                                    <button onclick="getAllPlans()" class="flex-1 bg-gray-600 text-white py-2 rounded hover:bg-gray-700">Listar Todos</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Update/Delete Plan -->
+                    <div class="mt-6 border rounded p-4">
+                        <h3 class="font-semibold mb-4">Atualizar/Excluir Plano</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <input type="number" id="updatePlanId" placeholder="ID do Plano" class="w-full px-3 py-2 border rounded mb-2">
+                                <input type="text" id="updatePlanName" placeholder="Nome do Plano" class="w-full px-3 py-2 border rounded mb-2">
+                                <input type="number" id="updatePlanPriceCents" placeholder="Preço (centavos)" class="w-full px-3 py-2 border rounded mb-2">
+                                <input type="number" id="updatePlanAmountCredits" placeholder="Quantidade de Créditos" class="w-full px-3 py-2 border rounded mb-2">
+                                <button onclick="updatePlan()" class="w-full bg-yellow-600 text-white py-2 rounded hover:bg-yellow-700">Atualizar Plano</button>
+                            </div>
+                            <div>
+                                <input type="number" id="deletePlanId" placeholder="ID do Plano" class="w-full px-3 py-2 border rounded mb-2">
+                                <button onclick="deletePlan()" class="w-full bg-red-600 text-white py-2 rounded hover:bg-red-700">Excluir Plano</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Results -->
+                    <div class="mt-6">
+                        <h3 class="font-semibold mb-2">Resultados:</h3>
+                        <pre id="planResults" class="bg-gray-100 p-4 rounded text-sm max-h-64 overflow-auto"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wallet Section -->
+        <div class="bg-white rounded-lg shadow-md mb-6">
+            <button class="accordion-toggle w-full px-6 py-4 text-left font-semibold text-lg text-gray-800 bg-purple-50 hover:bg-purple-100 rounded-t-lg focus:outline-none" data-target="wallet">
+                Saldo da Carteira & Histórico
+                <span class="float-right">▼</span>
+            </button>
+            <div id="wallet" class="accordion-content">
+                <div class="p-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Get Wallet Balance -->
+                        <div class="border rounded p-4">
+                            <h3 class="font-semibold mb-4">Verificar Saldo da Carteira</h3>
+                            <div class="space-y-3">
+                                <input type="number" id="walletClientId" placeholder="ID do Cliente" required class="w-full px-3 py-2 border rounded">
+                                <button onclick="getWalletBalance()" class="w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700">Ver Saldo</button>
+                            </div>
+                        </div>
+
+                        <!-- Get Ledger Entries -->
+                        <div class="border rounded p-4">
+                            <h3 class="font-semibold mb-4">Ver Histórico de Transações</h3>
+                            <div class="space-y-3">
+                                <input type="number" id="ledgerClientId" placeholder="ID do Cliente" required class="w-full px-3 py-2 border rounded">
+                                <input type="number" id="ledgerLimit" placeholder="Limite (padrão: 50)" class="w-full px-3 py-2 border rounded">
+                                <input type="number" id="ledgerOffset" placeholder="Início (padrão: 0)" class="w-full px-3 py-2 border rounded">
+                                <button onclick="getLedgerEntries()" class="w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700">Ver Histórico</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Results -->
+                    <div class="mt-6">
+                        <h3 class="font-semibold mb-2">Resultados:</h3>
+                        <pre id="walletResults" class="bg-gray-100 p-4 rounded text-sm max-h-64 overflow-auto"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top-up Section -->
+        <div class="bg-white rounded-lg shadow-md mb-6">
+            <button class="accordion-toggle w-full px-6 py-4 text-left font-semibold text-lg text-gray-800 bg-yellow-50 hover:bg-yellow-100 rounded-t-lg focus:outline-none" data-target="topup">
+                Adicionar Créditos
+                <span class="float-right">▼</span>
+            </button>
+            <div id="topup" class="accordion-content">
+                <div class="p-6">
+                    <div class="border rounded p-4">
+                        <h3 class="font-semibold mb-4">Adicionar Créditos ao Cliente</h3>
+                        <form id="topupForm" class="space-y-3">
+                            <input type="number" id="topupClientId" placeholder="ID do Cliente" required class="w-full px-3 py-2 border rounded">
+                            <input type="number" id="topupPlanId" placeholder="ID do Plano" required class="w-full px-3 py-2 border rounded">
+                            <input type="text" id="topupRequestId" placeholder="ID da Solicitação (opcional)" class="w-full px-3 py-2 border rounded">
+                            <button type="submit" class="w-full bg-yellow-600 text-white py-2 rounded hover:bg-yellow-700">Processar Recarga</button>
+                        </form>
+                    </div>
+
+                    <!-- Results -->
+                    <div class="mt-6">
+                        <h3 class="font-semibold mb-2">Resultados:</h3>
+                        <pre id="topupResults" class="bg-gray-100 p-4 rounded text-sm max-h-64 overflow-auto"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Usage Section -->
+        <div class="bg-white rounded-lg shadow-md mb-6">
+            <button class="accordion-toggle w-full px-6 py-4 text-left font-semibold text-lg text-gray-800 bg-orange-50 hover:bg-orange-100 rounded-t-lg focus:outline-none" data-target="usage">
+                Simular Uso
+                <span class="float-right">▼</span>
+            </button>
+            <div id="usage" class="accordion-content">
+                <div class="p-6">
+                    <div class="border rounded p-4">
+                        <h3 class="font-semibold mb-4">Simular Uso da API</h3>
+                        <form id="usageForm" class="space-y-3">
+                            <input type="number" id="usageClientId" placeholder="ID do Cliente" required class="w-full px-3 py-2 border rounded">
+                            <input type="text" id="usageModel" placeholder="Modelo (ex: FlamengoAGI, One Piece)" required class="w-full px-3 py-2 border rounded">
+                            <input type="number" id="usagePromptTokens" placeholder="Tokens de Entrada" required class="w-full px-3 py-2 border rounded">
+                            <input type="number" id="usageCompletionTokens" placeholder="Tokens de Saída" required class="w-full px-3 py-2 border rounded">
+                            <button type="submit" class="w-full bg-orange-600 text-white py-2 rounded hover:bg-orange-700">Simular Uso</button>
+                        </form>
+                    </div>
+
+                    <!-- Results -->
+                    <div class="mt-6">
+                        <h3 class="font-semibold mb-2">Resultados:</h3>
+                        <pre id="usageResults" class="bg-gray-100 p-4 rounded text-sm max-h-64 overflow-auto"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Accordion functionality
+        document.querySelectorAll('.accordion-toggle').forEach(button => {
+            button.addEventListener('click', () => {
+                const target = button.getAttribute('data-target');
+                const content = document.getElementById(target);
+                const arrow = button.querySelector('span');
+                
+                content.classList.toggle('open');
+                arrow.textContent = content.classList.contains('open') ? '▲' : '▼';
+            });
+        });
+
+        // API Helper function
+        async function apiRequest(url, method = 'GET', body = null) {
+            try {
+                const config = {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                };
+                
+                if (body) {
+                    config.body = JSON.stringify(body);
+                }
+                
+                const response = await fetch(url, config);
+                const data = await response.json();
+                return { status: response.status, data };
+            } catch (error) {
+                return { error: error.message };
+            }
+        }
+
+        // Client Functions
+        document.getElementById('createClientForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const result = await apiRequest('/api/clients', 'POST', {
+                name: document.getElementById('clientName').value,
+                email: document.getElementById('clientEmail').value,
+                phone: document.getElementById('clientPhone').value
+            });
+            document.getElementById('clientResults').textContent = JSON.stringify(result, null, 2);
+            if (result.data && !result.data.error) {
+                e.target.reset();
+            }
+        });
+
+        async function getAllClients() {
+            const result = await apiRequest('/api/clients');
+            document.getElementById('clientResults').textContent = JSON.stringify(result, null, 2);
+        }
+
+        async function searchClientByName() {
+            const name = document.getElementById('searchClientName').value;
+            if (!name) return;
+            const result = await apiRequest(`/api/clients/name/${encodeURIComponent(name)}`);
+            document.getElementById('clientResults').textContent = JSON.stringify(result, null, 2);
+        }
+
+        async function updateClient() {
+            const id = document.getElementById('updateClientId').value;
+            const name = document.getElementById('updateClientName').value;
+            const email = document.getElementById('updateClientEmail').value;
+            const phone = document.getElementById('updateClientPhone').value;
+            
+            if (!id) return;
+            
+            const body = {};
+            if (name) body.name = name;
+            if (email) body.email = email;
+            if (phone) body.phone = phone;
+            
+            const result = await apiRequest(`/api/clients/${id}`, 'PUT', body);
+            document.getElementById('clientResults').textContent = JSON.stringify(result, null, 2);
+        }
+
+        async function deleteClient() {
+            const id = document.getElementById('deleteClientId').value;
+            if (!id || !confirm('Tem certeza de que deseja excluir este cliente?')) return;
+            
+            const result = await apiRequest(`/api/clients/${id}`, 'DELETE');
+            document.getElementById('clientResults').textContent = JSON.stringify(result, null, 2);
+            if (result.status === 204) {
+                document.getElementById('deleteClientId').value = '';
+            }
+        }
+
+        // Plan Functions
+        document.getElementById('createPlanForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const result = await apiRequest('/api/plans', 'POST', {
+                plan_name: document.getElementById('planName').value,
+                price_cents: parseInt(document.getElementById('planPriceCents').value),
+                amount_credits: parseInt(document.getElementById('planAmountCredits').value)
+            });
+            document.getElementById('planResults').textContent = JSON.stringify(result, null, 2);
+            if (result.data && !result.data.error) {
+                e.target.reset();
+            }
+        });
+
+        async function getAllPlans() {
+            const result = await apiRequest('/api/plans');
+            document.getElementById('planResults').textContent = JSON.stringify(result, null, 2);
+        }
+
+        async function searchPlanByName() {
+            const name = document.getElementById('searchPlanName').value;
+            if (!name) return;
+            const result = await apiRequest(`/api/plans/name/${encodeURIComponent(name)}`);
+            document.getElementById('planResults').textContent = JSON.stringify(result, null, 2);
+        }
+
+        async function updatePlan() {
+            const id = document.getElementById('updatePlanId').value;
+            const planName = document.getElementById('updatePlanName').value;
+            const priceCents = document.getElementById('updatePlanPriceCents').value;
+            const amountCredits = document.getElementById('updatePlanAmountCredits').value;
+            
+            if (!id) return;
+            
+            const body = {};
+            if (planName) body.plan_name = planName;
+            if (priceCents) body.price_cents = parseInt(priceCents);
+            if (amountCredits) body.amount_credits = parseInt(amountCredits);
+            
+            const result = await apiRequest(`/api/plans/${id}`, 'PUT', body);
+            document.getElementById('planResults').textContent = JSON.stringify(result, null, 2);
+        }
+
+        async function deletePlan() {
+            const id = document.getElementById('deletePlanId').value;
+            if (!id || !confirm('Tem certeza de que deseja excluir este plano?')) return;
+            
+            const result = await apiRequest(`/api/plans/${id}`, 'DELETE');
+            document.getElementById('planResults').textContent = JSON.stringify(result, null, 2);
+            if (result.status === 204) {
+                document.getElementById('deletePlanId').value = '';
+            }
+        }
+
+        // Wallet Functions
+        async function getWalletBalance() {
+            const clientId = document.getElementById('walletClientId').value;
+            if (!clientId) return;
+            
+            const result = await apiRequest(`/api/wallets/${clientId}`);
+            document.getElementById('walletResults').textContent = JSON.stringify(result, null, 2);
+        }
+
+        async function getLedgerEntries() {
+            const clientId = document.getElementById('ledgerClientId').value;
+            if (!clientId) return;
+            
+            const limit = document.getElementById('ledgerLimit').value || '';
+            const offset = document.getElementById('ledgerOffset').value || '';
+            
+            let url = `/api/wallets/${clientId}/ledger`;
+            const params = new URLSearchParams();
+            if (limit) params.append('limit', limit);
+            if (offset) params.append('offset', offset);
+            if (params.toString()) url += '?' + params.toString();
+            
+            const result = await apiRequest(url);
+            document.getElementById('walletResults').textContent = JSON.stringify(result, null, 2);
+        }
+
+        // Top-up Functions
+        document.getElementById('topupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const clientId = document.getElementById('topupClientId').value;
+            const planId = document.getElementById('topupPlanId').value;
+            const requestId = document.getElementById('topupRequestId').value;
+            
+            const body = { plan_id: parseInt(planId) };
+            if (requestId) body.request_id = requestId;
+            
+            const result = await apiRequest(`/api/wallets/${clientId}/topups`, 'POST', body);
+            document.getElementById('topupResults').textContent = JSON.stringify(result, null, 2);
+            if (result.data && !result.data.error) {
+                e.target.reset();
+            }
+        });
+
+        // Usage Functions
+        document.getElementById('usageForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const result = await apiRequest('/api/usage', 'POST', {
+                client_id: parseInt(document.getElementById('usageClientId').value),
+                model: document.getElementById('usageModel').value,
+                prompt_tokens: parseInt(document.getElementById('usagePromptTokens').value),
+                completion_tokens: parseInt(document.getElementById('usageCompletionTokens').value)
+            });
+            document.getElementById('usageResults').textContent = JSON.stringify(result, null, 2);
+            if (result.data && !result.data.error) {
+                e.target.reset();
+            }
+        });
+    </script>
+</body>
+</html>
