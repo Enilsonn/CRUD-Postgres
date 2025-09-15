@@ -23,41 +23,37 @@ func NewProductHandler(repo *repository.ProductRepository) *ProductHandler {
 
 func (h *ProductHandler) CreateClientProduct(w http.ResponseWriter, r *http.Request) {
 	type req struct {
-		PlanName      string  `json:"plan_name"`
-		PriceCents    float32 `json:"price_cents"`
-		AmountCredits int     `json:"amount_credits"`
+		PlanName      string `json:"plan_name"`
+		PriceCents    int64  `json:"price_cents"`
+		AmountCredits int    `json:"amount_credits"`
 	}
-	product, err := utils.DecodeJson[req](r)
+	plan, err := utils.DecodeJson[req](r)
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusBadRequest,
 			map[string]any{
 				"error":   true,
-				"message": err,
+				"code":    "INVALID_REQUEST",
+				"message": fmt.Sprintf("invalid request body: %v", err),
 			})
 		return
 	}
 
-	// não haverá verificação se os campos são válidos
-	productCompleted := model.NewClientProduct(product.PlanName, product.PriceCents, product.AmountCredits)
+	planCompleted := model.NewPlan(plan.PlanName, plan.PriceCents, plan.AmountCredits)
 
-	id, err := h.Repo.CreateClientProduct(*productCompleted)
+	id, err := h.Repo.CreateClientProduct(*planCompleted)
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusInternalServerError,
 			map[string]any{
 				"error":   true,
-				"message": err,
+				"code":    "DATABASE_ERROR",
+				"message": err.Error(),
 			})
 		return
 	}
 
-	productCompleted.ID = id
+	planCompleted.ID = id
 
-	utils.EncodeJson(w, r, http.StatusCreated,
-		map[string]any{
-			"error":   false,
-			"message": "product created successfully",
-		})
-
+	utils.EncodeJson(w, r, http.StatusCreated, planCompleted)
 }
 
 func (h *ProductHandler) GetProductByID(w http.ResponseWriter, r *http.Request) {
@@ -139,7 +135,7 @@ func (h *ProductHandler) UpdateClientProduct(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	product, err := utils.DecodeJson[model.ClientProduct](r)
+	product, err := utils.DecodeJson[model.Plan](r)
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusBadRequest,
 			map[string]any{

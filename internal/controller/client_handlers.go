@@ -54,12 +54,7 @@ func (h *ClientHandler) CreateClient(w http.ResponseWriter, r *http.Request) {
 
 	clientCompleted.ID = id
 
-	utils.EncodeJson(w, r, http.StatusCreated,
-		map[string]any{
-			"error":   false,
-			"message": "client create successfully",
-		},
-	)
+	utils.EncodeJson(w, r, http.StatusCreated, clientCompleted)
 }
 
 func (h *ClientHandler) GetClientByID(w http.ResponseWriter, r *http.Request) {
@@ -99,19 +94,18 @@ func (h *ClientHandler) GetClientByName(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	client, err := h.Repo.GetClientByName(name)
+	clients, err := h.Repo.GetClientByName(name)
 	if err != nil {
-		utils.EncodeJson(w, r, http.StatusNotFound,
+		utils.EncodeJson(w, r, http.StatusInternalServerError,
 			map[string]any{
 				"error":   true,
-				"message": err,
+				"code":    "DATABASE_ERROR",
+				"message": err.Error(),
 			})
 		return
 	}
 
-	utils.EncodeJson(w, r, http.StatusOK,
-		client,
-	)
+	utils.EncodeJson(w, r, http.StatusOK, clients)
 }
 
 func (h *ClientHandler) GetAllClients(w http.ResponseWriter, r *http.Request) {
