@@ -20,18 +20,20 @@ func NewWalletRepository(db *sql.DB) *WalletRepository {
 func (r *WalletRepository) GetWalletByClientID(ctx context.Context, clientID int64) (*model.Wallet, error) {
 	wallet := &model.Wallet{}
 
-	err := r.db.QueryRowContext(ctx, `
+	sqlGet := `
 		SELECT client_id, balance_credits
 		FROM wallets
-		WHERE client_id = $1`,
+		WHERE client_id = $1`
+	err := r.db.QueryRowContext(ctx, sqlGet,
 		clientID).Scan(&wallet.ClientID, &wallet.BalanceCredits)
 
-	if err == sql.ErrNoRows {
-		// Create wallet if it doesn't exist
-		_, err = r.db.ExecContext(ctx, `
+	sqlInsert := `
 			INSERT INTO wallets (client_id, balance_credits)
 			VALUES ($1, 0)
-			ON CONFLICT (client_id) DO NOTHING`,
+			ON CONFLICT (client_id) DO NOTHING`
+	if err == sql.ErrNoRows {
+		// Create wallet if it doesn't exist
+		_, err = r.db.ExecContext(ctx, sqlInsert,
 			clientID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create wallet: %w", err)
@@ -48,12 +50,14 @@ func (r *WalletRepository) GetWalletByClientID(ctx context.Context, clientID int
 }
 
 func (r *WalletRepository) GetLedgerEntries(ctx context.Context, clientID int64, limit, offset int) ([]*model.CreditLedgerEntry, error) {
-	rows, err := r.db.QueryContext(ctx, `
+	sql := `
 		SELECT id, client_id, type, credits_delta, price_cents_delta, meta, created_at
 		FROM credit_ledger
 		WHERE client_id = $1
 		ORDER BY created_at DESC, id DESC
-		LIMIT $2 OFFSET $3`,
+		LIMIT $2 OFFSET $3`
+	rows, err := r.db.QueryContext(ctx,
+		sql,
 		clientID, limit, offset)
 
 	if err != nil {
@@ -97,9 +101,11 @@ func (r *WalletRepository) ProcessTopUp(ctx context.Context, clientID int64, cre
 	metaBytes, _ := json.Marshal(meta)
 
 	// Insert into ledger
-	_, err = tx.ExecContext(ctx, `
+	sql := `
 		INSERT INTO credit_ledger (client_id, type, credits_delta, price_cents_delta, meta)
-		VALUES ($1, 'TOPUP', $2, $3, $4)`,
+		VALUES ($1, 'TOPUP', $2, $3, $4)`
+	_, err = tx.ExecContext(ctx,
+		sql,
 		clientID, int64(credits), priceCents, metaBytes)
 	if err != nil {
 		return 0, fmt.Errorf("failed to insert ledger entry: %w", err)
@@ -107,12 +113,15 @@ func (r *WalletRepository) ProcessTopUp(ctx context.Context, clientID int64, cre
 
 	// Upsert wallet balance
 	var newBalance int64
-	err = tx.QueryRowContext(ctx, `
+	sql = `
 		INSERT INTO wallets (client_id, balance_credits)
 		VALUES ($1, $2)
 		ON CONFLICT (client_id)
 		DO UPDATE SET balance_credits = wallets.balance_credits + $2
-		RETURNING balance_credits`,
+		RETURNING balance_credits`
+
+	err = tx.QueryRowContext(ctx,
+		sql,
 		clientID, int64(credits)).Scan(&newBalance)
 	if err != nil {
 		return 0, fmt.Errorf("failed to update wallet balance: %w", err)
@@ -134,10 +143,12 @@ func (r *WalletRepository) ProcessUsage(ctx context.Context, clientID int64, mod
 
 	// Check current balance
 	var currentBalance int64
-	err = tx.QueryRowContext(ctx, `
+	sqlQuerie := `
 		SELECT COALESCE(balance_credits, 0)
 		FROM wallets
-		WHERE client_id = $1`,
+		WHERE client_id = $1`
+	err = tx.QueryRowContext(ctx,
+		sqlQuerie,
 		clientID).Scan(&currentBalance)
 	if err == sql.ErrNoRows {
 		return 0, fmt.Errorf("wallet not found")
@@ -151,9 +162,11 @@ func (r *WalletRepository) ProcessUsage(ctx context.Context, clientID int64, mod
 	}
 
 	// Insert usage event
-	_, err = tx.ExecContext(ctx, `
+	sqlQuerie = `
 		INSERT INTO usage_events (client_id, model, prompt_tokens, completion_tokens, credits_spent)
-		VALUES ($1, $2, $3, $4, $5)`,
+		VALUES ($1, $2, $3, $4, $5)`
+	_, err = tx.ExecContext(ctx,
+		sqlQuerie,
 		clientID, model, promptTokens, completionTokens, creditsSpent)
 	if err != nil {
 		return 0, fmt.Errorf("failed to insert usage event: %w", err)
@@ -168,9 +181,11 @@ func (r *WalletRepository) ProcessUsage(ctx context.Context, clientID int64, mod
 	metaBytes, _ := json.Marshal(meta)
 
 	// Insert into ledger (negative for usage)
-	_, err = tx.ExecContext(ctx, `
+	sqlQuerie = `
 		INSERT INTO credit_ledger (client_id, type, credits_delta, price_cents_delta, meta)
-		VALUES ($1, 'USAGE', $2, 0, $3)`,
+		VALUES ($1, 'USAGE', $2, 0, $3)`
+	_, err = tx.ExecContext(ctx,
+		sqlQuerie,
 		clientID, -creditsSpent, metaBytes)
 	if err != nil {
 		return 0, fmt.Errorf("failed to insert ledger entry: %w", err)
@@ -178,11 +193,13 @@ func (r *WalletRepository) ProcessUsage(ctx context.Context, clientID int64, mod
 
 	// Update wallet balance
 	var newBalance int64
-	err = tx.QueryRowContext(ctx, `
+	sqlQuerie = `
 		UPDATE wallets
 		SET balance_credits = balance_credits - $2
 		WHERE client_id = $1
-		RETURNING balance_credits`,
+		RETURNING balance_credits`
+	err = tx.QueryRowContext(ctx,
+		sqlQuerie,
 		clientID, creditsSpent).Scan(&newBalance)
 	if err != nil {
 		return 0, fmt.Errorf("failed to update wallet balance: %w", err)
