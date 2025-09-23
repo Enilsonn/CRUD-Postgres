@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -22,6 +23,7 @@ func NewProductHandler(repo *repository.ProductRepository) *ProductHandler {
 }
 
 func (h *ProductHandler) CreateClientProduct(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
 	type req struct {
 		PlanName      string `json:"plan_name"`
 		PriceCents    int64  `json:"price_cents"`
@@ -40,7 +42,7 @@ func (h *ProductHandler) CreateClientProduct(w http.ResponseWriter, r *http.Requ
 
 	planCompleted := model.NewPlan(plan.PlanName, plan.PriceCents, plan.AmountCredits)
 
-	id, err := h.Repo.CreateClientProduct(*planCompleted)
+	id, err := h.Repo.CreateClientProduct(ctx, *planCompleted)
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusInternalServerError,
 			map[string]any{
@@ -57,7 +59,8 @@ func (h *ProductHandler) CreateClientProduct(w http.ResponseWriter, r *http.Requ
 }
 
 func (h *ProductHandler) GetProductByID(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	ctx := context.Background()
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusBadRequest,
 			map[string]any{
@@ -67,7 +70,7 @@ func (h *ProductHandler) GetProductByID(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	product, err := h.Repo.GetProductByID(int64(id))
+	product, err := h.Repo.GetProductByID(ctx, id)
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusNotFound,
 			map[string]any{
@@ -83,6 +86,7 @@ func (h *ProductHandler) GetProductByID(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *ProductHandler) GetClientProductByName(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
 	name := chi.URLParam(r, "name")
 	if name == "" {
 		utils.EncodeJson(w, r, http.StatusBadRequest,
@@ -93,7 +97,7 @@ func (h *ProductHandler) GetClientProductByName(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	product, err := h.Repo.GetClientProductByName(name)
+	product, err := h.Repo.GetClientProductByName(ctx, name)
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusNotFound,
 			map[string]any{
@@ -109,7 +113,8 @@ func (h *ProductHandler) GetClientProductByName(w http.ResponseWriter, r *http.R
 }
 
 func (h *ProductHandler) GetAllClientProduct(w http.ResponseWriter, r *http.Request) {
-	products, err := h.Repo.GetAllClientProduct()
+	ctx := context.Background()
+	products, err := h.Repo.GetAllClientProduct(ctx)
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusNotFound,
 			map[string]any{
@@ -125,7 +130,8 @@ func (h *ProductHandler) GetAllClientProduct(w http.ResponseWriter, r *http.Requ
 }
 
 func (h *ProductHandler) UpdateClientProduct(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	ctx := context.Background()
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusBadRequest,
 			map[string]any{
@@ -145,7 +151,7 @@ func (h *ProductHandler) UpdateClientProduct(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	rowsAffected, err := h.Repo.UpdateClientProduct(int64(id), product)
+	rowsAffected, err := h.Repo.UpdateClientProduct(ctx, id, product)
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusInternalServerError,
 			map[string]any{
@@ -173,7 +179,8 @@ func (h *ProductHandler) UpdateClientProduct(w http.ResponseWriter, r *http.Requ
 }
 
 func (h *ProductHandler) DeleteClientProduct(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	ctx := context.Background()
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusBadRequest,
 			map[string]any{
@@ -183,7 +190,7 @@ func (h *ProductHandler) DeleteClientProduct(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	if err = h.Repo.DeleteClientProduct(int64(id)); err != nil {
+	if err = h.Repo.DeleteClientProduct(ctx, id); err != nil {
 		utils.EncodeJson(w, r, http.StatusInternalServerError,
 			map[string]any{
 				"error":   true,

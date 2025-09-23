@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"net/http"
@@ -24,6 +25,7 @@ func NewWalletHandler(walletRepo *repository.WalletRepository, planRepo *reposit
 }
 
 func (h *WalletHandler) GetWalletBalance(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
 	clientID, err := strconv.ParseInt(chi.URLParam(r, "client_id"), 10, 64)
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusBadRequest,
@@ -35,7 +37,7 @@ func (h *WalletHandler) GetWalletBalance(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	wallet, err := h.WalletRepo.GetWalletByClientID(clientID)
+	wallet, err := h.WalletRepo.GetWalletByClientID(ctx, clientID)
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusNotFound,
 			map[string]any{
@@ -50,6 +52,7 @@ func (h *WalletHandler) GetWalletBalance(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *WalletHandler) GetLedgerEntries(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
 	clientID, err := strconv.ParseInt(chi.URLParam(r, "client_id"), 10, 64)
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusBadRequest,
@@ -75,7 +78,7 @@ func (h *WalletHandler) GetLedgerEntries(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	entries, err := h.WalletRepo.GetLedgerEntries(clientID, limit, offset)
+	entries, err := h.WalletRepo.GetLedgerEntries(ctx, clientID, limit, offset)
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusInternalServerError,
 			map[string]any{
@@ -90,6 +93,7 @@ func (h *WalletHandler) GetLedgerEntries(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *WalletHandler) TopUpCredits(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
 	clientID, err := strconv.ParseInt(chi.URLParam(r, "client_id"), 10, 64)
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusBadRequest,
@@ -118,7 +122,7 @@ func (h *WalletHandler) TopUpCredits(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get plan details
-	plan, err := h.PlanRepo.GetProductByID(topup.PlanID)
+	plan, err := h.PlanRepo.GetProductByID(ctx, topup.PlanID)
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusNotFound,
 			map[string]any{
@@ -130,7 +134,7 @@ func (h *WalletHandler) TopUpCredits(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Process top-up transaction
-	newBalance, err := h.WalletRepo.ProcessTopUp(clientID, plan.AmountCredits, plan.PriceCents, topup.RequestID)
+	newBalance, err := h.WalletRepo.ProcessTopUp(ctx, clientID, plan.AmountCredits, plan.PriceCents, topup.RequestID)
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusInternalServerError,
 			map[string]any{
@@ -151,11 +155,12 @@ func (h *WalletHandler) TopUpCredits(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *WalletHandler) ProcessUsage(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
 	type req struct {
-		ClientID          int64  `json:"client_id"`
-		Model             string `json:"model"`
-		PromptTokens      int64  `json:"prompt_tokens"`
-		CompletionTokens  int64  `json:"completion_tokens"`
+		ClientID         int64  `json:"client_id"`
+		Model            string `json:"model"`
+		PromptTokens     int64  `json:"prompt_tokens"`
+		CompletionTokens int64  `json:"completion_tokens"`
 	}
 
 	usage, err := utils.DecodeJson[req](r)
@@ -174,7 +179,7 @@ func (h *WalletHandler) ProcessUsage(w http.ResponseWriter, r *http.Request) {
 	creditsNeeded := int64(math.Ceil(float64(totalTokens) / 1000.0))
 
 	// Process usage transaction
-	newBalance, err := h.WalletRepo.ProcessUsage(usage.ClientID, usage.Model, usage.PromptTokens, usage.CompletionTokens, creditsNeeded)
+	newBalance, err := h.WalletRepo.ProcessUsage(ctx, usage.ClientID, usage.Model, usage.PromptTokens, usage.CompletionTokens, creditsNeeded)
 	if err != nil {
 		if err.Error() == "insufficient credits" {
 			utils.EncodeJson(w, r, http.StatusConflict,
@@ -196,9 +201,9 @@ func (h *WalletHandler) ProcessUsage(w http.ResponseWriter, r *http.Request) {
 
 	utils.EncodeJson(w, r, http.StatusOK,
 		map[string]any{
-			"client_id":         usage.ClientID,
-			"balance_credits":   newBalance,
-			"credits_spent":     creditsNeeded,
-			"tokens_processed":  totalTokens,
+			"client_id":        usage.ClientID,
+			"balance_credits":  newBalance,
+			"credits_spent":    creditsNeeded,
+			"tokens_processed": totalTokens,
 		})
 }

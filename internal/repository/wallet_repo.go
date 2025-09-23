@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -16,10 +17,10 @@ func NewWalletRepository(db *sql.DB) *WalletRepository {
 	return &WalletRepository{db: db}
 }
 
-func (r *WalletRepository) GetWalletByClientID(clientID int64) (*model.Wallet, error) {
+func (r *WalletRepository) GetWalletByClientID(ctx context.Context, clientID int64) (*model.Wallet, error) {
 	wallet := &model.Wallet{}
 
-	err := r.db.QueryRow(`
+	err := r.db.QueryRowContext(ctx, `
 		SELECT client_id, balance_credits
 		FROM wallets
 		WHERE client_id = $1`,
@@ -27,7 +28,7 @@ func (r *WalletRepository) GetWalletByClientID(clientID int64) (*model.Wallet, e
 
 	if err == sql.ErrNoRows {
 		// Create wallet if it doesn't exist
-		_, err = r.db.Exec(`
+		_, err = r.db.ExecContext(ctx, `
 			INSERT INTO wallets (client_id, balance_credits)
 			VALUES ($1, 0)
 			ON CONFLICT (client_id) DO NOTHING`,
@@ -46,8 +47,8 @@ func (r *WalletRepository) GetWalletByClientID(clientID int64) (*model.Wallet, e
 	return wallet, nil
 }
 
-func (r *WalletRepository) GetLedgerEntries(clientID int64, limit, offset int) ([]*model.CreditLedgerEntry, error) {
-	rows, err := r.db.Query(`
+func (r *WalletRepository) GetLedgerEntries(ctx context.Context, clientID int64, limit, offset int) ([]*model.CreditLedgerEntry, error) {
+	rows, err := r.db.QueryContext(ctx, `
 		SELECT id, client_id, type, credits_delta, price_cents_delta, meta, created_at
 		FROM credit_ledger
 		WHERE client_id = $1
@@ -81,7 +82,7 @@ func (r *WalletRepository) GetLedgerEntries(clientID int64, limit, offset int) (
 	return entries, nil
 }
 
-func (r *WalletRepository) ProcessTopUp(clientID int64, credits int, priceCents int64, requestID string) (int64, error) {
+func (r *WalletRepository) ProcessTopUp(ctx context.Context, clientID int64, credits int, priceCents int64, requestID string) (int64, error) {
 	tx, err := r.db.Begin()
 	if err != nil {
 		return 0, fmt.Errorf("failed to begin transaction: %w", err)
@@ -96,7 +97,7 @@ func (r *WalletRepository) ProcessTopUp(clientID int64, credits int, priceCents 
 	metaBytes, _ := json.Marshal(meta)
 
 	// Insert into ledger
-	_, err = tx.Exec(`
+	_, err = tx.ExecContext(ctx, `
 		INSERT INTO credit_ledger (client_id, type, credits_delta, price_cents_delta, meta)
 		VALUES ($1, 'TOPUP', $2, $3, $4)`,
 		clientID, int64(credits), priceCents, metaBytes)
@@ -106,7 +107,7 @@ func (r *WalletRepository) ProcessTopUp(clientID int64, credits int, priceCents 
 
 	// Upsert wallet balance
 	var newBalance int64
-	err = tx.QueryRow(`
+	err = tx.QueryRowContext(ctx, `
 		INSERT INTO wallets (client_id, balance_credits)
 		VALUES ($1, $2)
 		ON CONFLICT (client_id)
@@ -124,7 +125,7 @@ func (r *WalletRepository) ProcessTopUp(clientID int64, credits int, priceCents 
 	return newBalance, nil
 }
 
-func (r *WalletRepository) ProcessUsage(clientID int64, model string, promptTokens, completionTokens, creditsSpent int64) (int64, error) {
+func (r *WalletRepository) ProcessUsage(ctx context.Context, clientID int64, model string, promptTokens, completionTokens, creditsSpent int64) (int64, error) {
 	tx, err := r.db.Begin()
 	if err != nil {
 		return 0, fmt.Errorf("failed to begin transaction: %w", err)
@@ -133,7 +134,7 @@ func (r *WalletRepository) ProcessUsage(clientID int64, model string, promptToke
 
 	// Check current balance
 	var currentBalance int64
-	err = tx.QueryRow(`
+	err = tx.QueryRowContext(ctx, `
 		SELECT COALESCE(balance_credits, 0)
 		FROM wallets
 		WHERE client_id = $1`,
@@ -150,7 +151,7 @@ func (r *WalletRepository) ProcessUsage(clientID int64, model string, promptToke
 	}
 
 	// Insert usage event
-	_, err = tx.Exec(`
+	_, err = tx.ExecContext(ctx, `
 		INSERT INTO usage_events (client_id, model, prompt_tokens, completion_tokens, credits_spent)
 		VALUES ($1, $2, $3, $4, $5)`,
 		clientID, model, promptTokens, completionTokens, creditsSpent)
@@ -167,7 +168,7 @@ func (r *WalletRepository) ProcessUsage(clientID int64, model string, promptToke
 	metaBytes, _ := json.Marshal(meta)
 
 	// Insert into ledger (negative for usage)
-	_, err = tx.Exec(`
+	_, err = tx.ExecContext(ctx, `
 		INSERT INTO credit_ledger (client_id, type, credits_delta, price_cents_delta, meta)
 		VALUES ($1, 'USAGE', $2, 0, $3)`,
 		clientID, -creditsSpent, metaBytes)
@@ -177,7 +178,7 @@ func (r *WalletRepository) ProcessUsage(clientID int64, model string, promptToke
 
 	// Update wallet balance
 	var newBalance int64
-	err = tx.QueryRow(`
+	err = tx.QueryRowContext(ctx, `
 		UPDATE wallets
 		SET balance_credits = balance_credits - $2
 		WHERE client_id = $1

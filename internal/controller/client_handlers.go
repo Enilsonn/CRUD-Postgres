@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -22,6 +23,7 @@ func NewClientHandler(repo *repository.ClientRepository) *ClientHandler {
 }
 
 func (h *ClientHandler) CreateClient(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
 	type req struct {
 		Name  string `json:"name"`
 		Email string `json:"email"`
@@ -41,7 +43,7 @@ func (h *ClientHandler) CreateClient(w http.ResponseWriter, r *http.Request) {
 
 	clientCompleted := model.NewCliente(client.Name, client.Email, client.Phone)
 
-	id, err := h.Repo.CreateClient(*clientCompleted)
+	id, err := h.Repo.CreateClient(ctx, *clientCompleted)
 	if err != nil {
 		utils.EncodeJson(w, r,
 			http.StatusInternalServerError,
@@ -58,6 +60,7 @@ func (h *ClientHandler) CreateClient(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ClientHandler) GetClientByID(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
 	id, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusBadRequest,
@@ -68,7 +71,7 @@ func (h *ClientHandler) GetClientByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client, err := h.Repo.GetClientByID(int64(id))
+	client, err := h.Repo.GetClientByID(ctx, int64(id))
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusNotFound,
 			map[string]any{
@@ -84,6 +87,7 @@ func (h *ClientHandler) GetClientByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ClientHandler) GetClientByName(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
 	name := chi.URLParam(r, "name")
 	if name == "" {
 		utils.EncodeJson(w, r, http.StatusBadRequest,
@@ -94,7 +98,7 @@ func (h *ClientHandler) GetClientByName(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	clients, err := h.Repo.GetClientByName(name)
+	clients, err := h.Repo.GetClientByName(ctx, name)
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusInternalServerError,
 			map[string]any{
@@ -109,7 +113,8 @@ func (h *ClientHandler) GetClientByName(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *ClientHandler) GetAllClients(w http.ResponseWriter, r *http.Request) {
-	clients, err := h.Repo.GetAllClients()
+	ctx := context.Background()
+	clients, err := h.Repo.GetAllClients(ctx)
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusNotFound,
 			map[string]any{
@@ -124,6 +129,7 @@ func (h *ClientHandler) GetAllClients(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ClientHandler) UpdateClients(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
 	id, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusBadRequest,
@@ -145,7 +151,7 @@ func (h *ClientHandler) UpdateClients(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rowsAffected, err := h.Repo.UpdateClients(int64(id), client)
+	rowsAffected, err := h.Repo.UpdateClients(ctx, int64(id), client)
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusInternalServerError,
 			map[string]any{
@@ -173,6 +179,7 @@ func (h *ClientHandler) UpdateClients(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ClientHandler) DeleteClient(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
 	id, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
 		utils.EncodeJson(w, r, http.StatusBadRequest,
@@ -183,7 +190,7 @@ func (h *ClientHandler) DeleteClient(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = h.Repo.DeleteClient(int64(id)); err != nil {
+	if err = h.Repo.DeleteClient(ctx, int64(id)); err != nil {
 		utils.EncodeJson(w, r, http.StatusInternalServerError,
 			map[string]any{
 				"error":   true,

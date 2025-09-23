@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
@@ -15,7 +16,7 @@ func NewClientRepository(db *sql.DB) *ClientRepository {
 	return &ClientRepository{db: db}
 }
 
-func (r *ClientRepository) CreateClient(client model.Client) (int64, error) {
+func (r *ClientRepository) CreateClient(ctx context.Context, client model.Client) (int64, error) {
 	sql := `INSERT INTO clients (name, email, phone, status,registration_data)
 			VALUES ($1, $2, $3, $4, $5)
 			RETURNING id
@@ -23,7 +24,8 @@ func (r *ClientRepository) CreateClient(client model.Client) (int64, error) {
 
 	var id int64
 
-	err := r.db.QueryRow(
+	err := r.db.QueryRowContext(
+		ctx,
 		sql,
 		client.Name,
 		client.Email,
@@ -38,7 +40,7 @@ func (r *ClientRepository) CreateClient(client model.Client) (int64, error) {
 	return id, nil
 }
 
-func (r *ClientRepository) GetClientByID(id int64) (*model.Client, error) {
+func (r *ClientRepository) GetClientByID(ctx context.Context, id int64) (*model.Client, error) {
 	sql := `SELECT id, name, email, phone, status, registration_data
 			FROM clients
 			WHERE id=$1
@@ -47,7 +49,8 @@ func (r *ClientRepository) GetClientByID(id int64) (*model.Client, error) {
 
 	var client model.Client
 
-	row := r.db.QueryRow(
+	row := r.db.QueryRowContext(
+		ctx,
 		sql,
 		id,
 	)
@@ -66,13 +69,14 @@ func (r *ClientRepository) GetClientByID(id int64) (*model.Client, error) {
 	return &client, nil
 }
 
-func (r *ClientRepository) GetAllClients() ([]model.Client, error) {
+func (r *ClientRepository) GetAllClients(ctx context.Context) ([]model.Client, error) {
 	sql := `SELECT id, name, email, phone, status, registration_data
 			FROM clients
 			WHERE status=true
 	`
 
-	rows, err := r.db.Query(
+	rows, err := r.db.QueryContext(
+		ctx,
 		sql,
 	)
 	if err != nil {
@@ -102,14 +106,17 @@ func (r *ClientRepository) GetAllClients() ([]model.Client, error) {
 	return clients, nil
 }
 
-func (r *ClientRepository) GetClientByName(name string) ([]model.Client, error) {
+func (r *ClientRepository) GetClientByName(ctx context.Context, name string) ([]model.Client, error) {
 	sql := `SELECT id, name, email, phone, status, registration_data
 			FROM clients
 			WHERE name=$1
 			AND status=true
 	`
 
-	rows, err := r.db.Query(sql, name)
+	rows, err := r.db.QueryContext(
+		ctx,
+		sql,
+		name)
 	if err != nil {
 		return nil, fmt.Errorf("error to found clients named %s: %v", name, err)
 	}
@@ -137,13 +144,14 @@ func (r *ClientRepository) GetClientByName(name string) ([]model.Client, error) 
 	return clients, nil
 }
 
-func (r *ClientRepository) UpdateClients(id int64, client model.Client) (int64, error) {
+func (r *ClientRepository) UpdateClients(ctx context.Context, id int64, client model.Client) (int64, error) {
 	sql := `UPDATE clients
 			SET name=$1, email=$2, phone=$3
 			WHERE id=$4
 			AND status=true
 	`
-	resp, err := r.db.Exec(
+	resp, err := r.db.ExecContext(
+		ctx,
 		sql,
 		client.Name,
 		client.Email,
@@ -165,13 +173,14 @@ func (r *ClientRepository) UpdateClients(id int64, client model.Client) (int64, 
 	return rowsAffected, nil
 }
 
-func (r *ClientRepository) DeleteClient(id int64) error {
+func (r *ClientRepository) DeleteClient(ctx context.Context, id int64) error {
 	sql := `UPDATE clients
 			SET status=false
 			WHERE id=$1
 	`
 
-	resp, err := r.db.Exec(
+	resp, err := r.db.ExecContext(
+		ctx,
 		sql,
 		id,
 	)

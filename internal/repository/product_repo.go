@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
@@ -15,13 +16,14 @@ func NewProductRepository(db *sql.DB) *ProductRepository {
 	return &ProductRepository{db: db}
 }
 
-func (r *ProductRepository) CreateClientProduct(plan model.Plan) (int64, error) {
+func (r *ProductRepository) CreateClientProduct(ctx context.Context, plan model.Plan) (int64, error) {
 	sql := `INSERT INTO plans (plan_name, price_cents, amount_credits, status)
 			VALUES ($1, $2, $3, $4)
 			RETURNING id
 	`
 	var id int64
-	err := r.db.QueryRow(
+	err := r.db.QueryRowContext(
+		ctx,
 		sql,
 		plan.PlanName,
 		plan.PriceCents,
@@ -35,14 +37,15 @@ func (r *ProductRepository) CreateClientProduct(plan model.Plan) (int64, error) 
 	return id, nil
 }
 
-func (r *ProductRepository) GetProductByID(id int64) (*model.Plan, error) {
+func (r *ProductRepository) GetProductByID(ctx context.Context, id int64) (*model.Plan, error) {
 	sql := `SELECT id, plan_name, price_cents, amount_credits, status
 			FROM plans
 			WHERE id=$1
 			AND status=true
 	`
 	var plan model.Plan
-	row := r.db.QueryRow(
+	row := r.db.QueryRowContext(
+		ctx,
 		sql,
 		id,
 	)
@@ -60,13 +63,14 @@ func (r *ProductRepository) GetProductByID(id int64) (*model.Plan, error) {
 	return &plan, nil
 }
 
-func (r *ProductRepository) GetClientProductByName(plan_name string) (*model.Plan, error) {
+func (r *ProductRepository) GetClientProductByName(ctx context.Context, plan_name string) (*model.Plan, error) {
 	sql := `SELECT id, plan_name, price_cents, amount_credits, status
 			FROM plans
 			WHERE plan_name=$1
 	`
 	var plan model.Plan
-	row := r.db.QueryRow(
+	row := r.db.QueryRowContext(
+		ctx,
 		sql,
 		plan_name,
 	)
@@ -84,12 +88,13 @@ func (r *ProductRepository) GetClientProductByName(plan_name string) (*model.Pla
 	return &plan, nil
 }
 
-func (r *ProductRepository) GetAllClientProduct() ([]model.Plan, error) {
+func (r *ProductRepository) GetAllClientProduct(ctx context.Context) ([]model.Plan, error) {
 	sql := `SELECT id, plan_name, price_cents, amount_credits, status
 			FROM plans
 			WHERE status=true
 	`
-	rows, err := r.db.Query(
+	rows, err := r.db.QueryContext(
+		ctx,
 		sql,
 	)
 	if err != nil {
@@ -118,14 +123,15 @@ func (r *ProductRepository) GetAllClientProduct() ([]model.Plan, error) {
 	return plans, nil
 }
 
-func (r *ProductRepository) UpdateClientProduct(id int64, plan model.Plan) (int64, error) {
+func (r *ProductRepository) UpdateClientProduct(ctx context.Context, id int64, plan model.Plan) (int64, error) {
 	sql := `UPDATE plans
 			SET plan_name=$1, price_cents=$2, amount_credits=$3
 			WHERE id=$4
 			AND status=true
 	`
 
-	resp, err := r.db.Exec(
+	resp, err := r.db.ExecContext(
+		ctx,
 		sql,
 		plan.PlanName,
 		plan.PriceCents,
@@ -147,12 +153,13 @@ func (r *ProductRepository) UpdateClientProduct(id int64, plan model.Plan) (int6
 	return rowsAffected, nil
 }
 
-func (r *ProductRepository) DeleteClientProduct(id int64) error {
+func (r *ProductRepository) DeleteClientProduct(ctx context.Context, id int64) error {
 	sql := `UPDATE plans
 			SET status=false
 			WHERE id=$1
 	`
-	resp, err := r.db.Exec(
+	resp, err := r.db.ExecContext(
+		ctx,
 		sql,
 		id,
 	)
