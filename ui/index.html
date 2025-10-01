@@ -215,7 +215,6 @@
                                 <option value="PIX">PIX</option>
                                 <option value="CARD">Cartão</option>
                                 <option value="BOLETO">Boleto</option>
-                                <option value="BERRIES">Berries</option>
                             </select>
                             <div class="border rounded p-3 space-y-3 bg-slate-50">
                                 <h4 class="font-semibold text-sm">Itens do Pedido</h4>
@@ -368,6 +367,33 @@
                     <div class="mt-6">
                         <h3 class="font-semibold mb-2">Resultados:</h3>
                         <pre id="usageResults" class="bg-gray-100 p-4 rounded text-sm max-h-64 overflow-auto"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Section -->
+        <div class="bg-white rounded-lg shadow-md mb-6">
+            <button class="accordion-toggle w-full px-6 py-4 text-left font-semibold text-lg text-gray-800 bg-indigo-50 hover:bg-indigo-100 rounded-t-lg focus:outline-none" data-target="chatOllama">
+                Chat (Ollama)
+                <span class="float-right">▼</span>
+            </button>
+            <div id="chatOllama" class="accordion-content">
+                <div class="p-6">
+                    <div class="border rounded p-4 space-y-3">
+                        <h3 class="font-semibold mb-4">Conversar com gemma3:1b</h3>
+                        <form id="chatForm" class="space-y-3">
+                            <input type="number" id="chatClientId" placeholder="ID do Cliente" required class="w-full px-3 py-2 border rounded">
+                            <input type="text" id="chatModel" placeholder="Modelo (opcional, padrão gemma3:1b)" class="w-full px-3 py-2 border rounded">
+                            <input type="text" id="chatSystemPrompt" placeholder="Mensagem de sistema (opcional)" class="w-full px-3 py-2 border rounded">
+                            <textarea id="chatUserPrompt" placeholder="Mensagem do usuário" required class="w-full px-3 py-2 border rounded h-28"></textarea>
+                            <textarea id="chatOptions" placeholder="Options JSON (opcional)" class="w-full px-3 py-2 border rounded h-24"></textarea>
+                            <button type="submit" class="w-full bg-slate-600 text-white py-2 rounded hover:bg-slate-700">Enviar</button>
+                        </form>
+                    </div>
+                    <div class="mt-6">
+                        <h3 class="font-semibold mb-2">Resposta:</h3>
+                        <pre id="chatResults" class="bg-gray-100 p-4 rounded text-sm max-h-64 overflow-auto"></pre>
                     </div>
                 </div>
             </div>
@@ -709,6 +735,50 @@
             if (result.data && !result.data.error) {
                 e.target.reset();
             }
+        });
+
+        // Chat Functions
+        document.getElementById('chatForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const clientId = parseInt(document.getElementById('chatClientId').value, 10);
+            const model = document.getElementById('chatModel').value.trim();
+            const systemPrompt = document.getElementById('chatSystemPrompt').value.trim();
+            const userPrompt = document.getElementById('chatUserPrompt').value.trim();
+            const optionsRaw = document.getElementById('chatOptions').value.trim();
+
+            if (!clientId || Number.isNaN(clientId) || !userPrompt) {
+                alert('Informe o ID do cliente e uma mensagem.');
+                return;
+            }
+
+            const messages = [];
+            if (systemPrompt) {
+                messages.push({ role: 'system', content: systemPrompt });
+            }
+            messages.push({ role: 'user', content: userPrompt });
+
+            const payload = {
+                client_id: clientId,
+                messages,
+                stream: false,
+            };
+
+            if (model) {
+                payload.model = model;
+            }
+
+            if (optionsRaw) {
+                try {
+                    payload.options = JSON.parse(optionsRaw);
+                } catch (err) {
+                    document.getElementById('chatResults').textContent = JSON.stringify({ error: 'Options JSON inválido', details: err.message }, null, 2);
+                    return;
+                }
+            }
+
+            const result = await apiRequest('/api/chat/ollama', 'POST', payload);
+            document.getElementById('chatResults').textContent = JSON.stringify(result, null, 2);
         });
 
         // Usage Functions

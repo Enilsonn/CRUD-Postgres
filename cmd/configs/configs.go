@@ -7,6 +7,7 @@ var cfg *config
 type config struct {
 	API APIConfig
 	DB  DBConf
+	AI  AIConf
 }
 
 type APIConfig struct {
@@ -21,11 +22,18 @@ type DBConf struct {
 	Database string
 }
 
+type AIConf struct {
+	OllamaHost   string
+	DefaultModel string
+}
+
 func init() {
 	viper.SetDefault("api.host", "localhost")
 	viper.SetDefault("api.port", "9000")
 	viper.SetDefault("database.host", "localhost")
 	viper.SetDefault("database.port", "5432")
+	viper.SetDefault("ai.ollama_host", "http://localhost:11434")
+	viper.SetDefault("ai.default_model", "gemma3:1b")
 }
 
 func Load(path string) error {
@@ -53,6 +61,11 @@ func Load(path string) error {
 		Database: viper.GetString("database.name"),
 	}
 
+	cfg.AI = AIConf{
+		OllamaHost:   viper.GetString("ai.ollama_host"),
+		DefaultModel: viper.GetString("ai.default_model"),
+	}
+
 	return nil
 }
 
@@ -62,4 +75,8 @@ func GetDB() DBConf {
 
 func GetServerPort() string {
 	return cfg.API.Port
+}
+
+func GetAI() AIConf {
+	return cfg.AI
 }

@@ -50,6 +50,7 @@ func main() {
 	walletHandler := controller.NewWalletHandler(walletRepository, productRepository)
 	orderHandler := controller.NewOrderHandler(orderService)
 	reportHandler := controller.NewReportHandler(reportService)
+	chatHandler := controller.NewChatHandler(walletRepository)
 
 	r := chi.NewRouter()
 
@@ -105,6 +106,7 @@ func main() {
 	})
 
 	r.Post("/api/usage", walletHandler.ProcessUsage)
+	r.Post("/api/chat/ollama", chatHandler.ChatOllama)
 
 	r.With(utils.RequireEmployee).Get("/api/reports/sales/monthly", reportHandler.SellerMonthlySales)
 

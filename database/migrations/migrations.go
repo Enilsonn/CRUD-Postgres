@@ -72,7 +72,7 @@ func Up(db *sql.DB) error {
 func runPhaseTwo(db *sql.DB) error {
 	statements := []string{
 		`DO $$ BEGIN
-	  CREATE TYPE payment_method AS ENUM ('CARD','BOLETO','PIX','BERRIES');
+	  CREATE TYPE payment_method AS ENUM ('CARD','BOLETO','PIX');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;`,
 		`DO $$ BEGIN
 	  CREATE TYPE payment_status AS ENUM ('PENDING','CONFIRMED','FAILED','CANCELED');

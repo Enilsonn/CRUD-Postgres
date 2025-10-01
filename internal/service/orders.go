@@ -10,10 +10,9 @@ import (
 )
 
 var allowedPaymentMethods = map[string]struct{}{
-	"CARD":    {},
-	"BOLETO":  {},
-	"PIX":     {},
-	"BERRIES": {},
+	"CARD":   {},
+	"BOLETO": {},
+	"PIX":    {},
 }
 
 type OrderService struct {

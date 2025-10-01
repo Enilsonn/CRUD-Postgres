@@ -7,3 +7,7 @@ port = "5432"
 user = "user"
 pass = "1122"
 name = "chatgpt"
+
+[ai]
+ollama_host = "http://localhost:11434"
+default_model = "gemma3:1b"
