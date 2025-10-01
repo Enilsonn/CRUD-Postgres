@@ -68,18 +68,20 @@ func (r *WalletRepository) GetLedgerEntries(ctx context.Context, clientID int64,
 	var entries []*model.CreditLedgerEntry
 	for rows.Next() {
 		entry := &model.CreditLedgerEntry{}
+		var metaBytes []byte
 		err := rows.Scan(
 			&entry.ID,
 			&entry.ClientID,
 			&entry.Type,
 			&entry.CreditsDelta,
 			&entry.PriceCentsDelta,
-			&entry.Meta,
+			&metaBytes,
 			&entry.CreatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan ledger entry: %w", err)
 		}
+		entry.Meta = json.RawMessage(metaBytes)
 		entries = append(entries, entry)
 	}
 

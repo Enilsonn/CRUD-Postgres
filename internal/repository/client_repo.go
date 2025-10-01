@@ -17,8 +17,8 @@ func NewClientRepository(db *sql.DB) *ClientRepository {
 }
 
 func (r *ClientRepository) CreateClient(ctx context.Context, client model.Client) (int64, error) {
-	sql := `INSERT INTO clients (name, email, phone, status,registration_data)
-			VALUES ($1, $2, $3, $4, $5)
+	sql := `INSERT INTO clients (name, email, phone, status, registration_data, supports_flamengo, watches_one_piece, city)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 			RETURNING id
 	`
 
@@ -32,16 +32,19 @@ func (r *ClientRepository) CreateClient(ctx context.Context, client model.Client
 		client.Phone,
 		client.Status,
 		client.RegistrationData,
+		client.SupportsFlamengo,
+		client.WatchesOnePiece,
+		client.City,
 	).Scan(&id)
 	if err != nil {
-		return 0, fmt.Errorf("error creating client on the table: %v", err)
+		return 0, fmt.Errorf("error creating client in the table: %w", err)
 	}
 
 	return id, nil
 }
 
 func (r *ClientRepository) GetClientByID(ctx context.Context, id int64) (*model.Client, error) {
-	sql := `SELECT id, name, email, phone, status, registration_data
+	sql := `SELECT id, name, email, phone, status, registration_data, supports_flamengo, watches_one_piece, city
 			FROM clients
 			WHERE id=$1
 			AND status=true
@@ -61,16 +64,19 @@ func (r *ClientRepository) GetClientByID(ctx context.Context, id int64) (*model.
 		&client.Phone,
 		&client.Status,
 		&client.RegistrationData,
+		&client.SupportsFlamengo,
+		&client.WatchesOnePiece,
+		&client.City,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error to found client %d: %v", id, err)
+		return nil, fmt.Errorf("error to find client %d: %w", id, err)
 	}
 
 	return &client, nil
 }
 
 func (r *ClientRepository) GetAllClients(ctx context.Context) ([]model.Client, error) {
-	sql := `SELECT id, name, email, phone, status, registration_data
+	sql := `SELECT id, name, email, phone, status, registration_data, supports_flamengo, watches_one_piece, city
 			FROM clients
 			WHERE status=true
 	`
@@ -95,9 +101,12 @@ func (r *ClientRepository) GetAllClients(ctx context.Context) ([]model.Client, e
 			&client.Phone,
 			&client.Status,
 			&client.RegistrationData,
+			&client.SupportsFlamengo,
+			&client.WatchesOnePiece,
+			&client.City,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("error to access client: %v", err)
+			return nil, fmt.Errorf("error to access client: %w", err)
 		}
 
 		clients = append(clients, client)
@@ -107,7 +116,7 @@ func (r *ClientRepository) GetAllClients(ctx context.Context) ([]model.Client, e
 }
 
 func (r *ClientRepository) GetClientByName(ctx context.Context, name string) ([]model.Client, error) {
-	sql := `SELECT id, name, email, phone, status, registration_data
+	sql := `SELECT id, name, email, phone, status, registration_data, supports_flamengo, watches_one_piece, city
 			FROM clients
 			WHERE name=$1
 			AND status=true
@@ -133,9 +142,12 @@ func (r *ClientRepository) GetClientByName(ctx context.Context, name string) ([]
 			&client.Phone,
 			&client.Status,
 			&client.RegistrationData,
+			&client.SupportsFlamengo,
+			&client.WatchesOnePiece,
+			&client.City,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("error to access client: %v", err)
+			return nil, fmt.Errorf("error to access client: %w", err)
 		}
 
 		clients = append(clients, client)
@@ -146,8 +158,8 @@ func (r *ClientRepository) GetClientByName(ctx context.Context, name string) ([]
 
 func (r *ClientRepository) UpdateClients(ctx context.Context, id int64, client model.Client) (int64, error) {
 	sql := `UPDATE clients
-			SET name=$1, email=$2, phone=$3
-			WHERE id=$4
+			SET name=$1, email=$2, phone=$3, supports_flamengo=$4, watches_one_piece=$5, city=$6
+			WHERE id=$7
 			AND status=true
 	`
 	resp, err := r.db.ExecContext(
@@ -156,15 +168,18 @@ func (r *ClientRepository) UpdateClients(ctx context.Context, id int64, client m
 		client.Name,
 		client.Email,
 		client.Phone,
+		client.SupportsFlamengo,
+		client.WatchesOnePiece,
+		client.City,
 		id,
 	)
 	if err != nil {
-		return 0, fmt.Errorf("error to update client %d: %v", id, err)
+		return 0, fmt.Errorf("error to update client %d: %w", id, err)
 	}
 
 	rowsAffected, err := resp.RowsAffected()
 	if err != nil {
-		return 0, fmt.Errorf("not possivel check rows affected on update: %v", err)
+		return 0, fmt.Errorf("unable to check rows affected on update: %w", err)
 	}
 	if rowsAffected == 0 {
 		return 0, fmt.Errorf("no client found with id %d was updated", id)
