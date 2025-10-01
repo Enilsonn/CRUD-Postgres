@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -49,7 +50,8 @@ func (h *ClientHandler) CreateClient(w http.ResponseWriter, r *http.Request) {
 		client.WatchesOnePiece = *payload.WatchesOnePiece
 	}
 	if payload.City != nil {
-		client.City = strings.TrimSpace(*payload.City)
+		trimmed := strings.TrimSpace(*payload.City)
+		client.City = sql.NullString{String: trimmed, Valid: trimmed != ""}
 	}
 
 	id, err := h.Repo.CreateClient(r.Context(), *client)
@@ -177,7 +179,8 @@ func (h *ClientHandler) UpdateClients(w http.ResponseWriter, r *http.Request) {
 		current.WatchesOnePiece = *payload.WatchesOnePiece
 	}
 	if payload.City != nil {
-		current.City = strings.TrimSpace(*payload.City)
+		trimmed := strings.TrimSpace(*payload.City)
+		current.City = sql.NullString{String: trimmed, Valid: trimmed != ""}
 	}
 
 	rowsAffected, err := h.Repo.UpdateClients(r.Context(), int64(id), *current)

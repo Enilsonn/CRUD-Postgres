@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Playground</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html { scroll-behavior: smooth; }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <!-- Top Bar -->
+  <div class="w-full bg-white border-b sticky top-0 z-40">
+    <div class="container mx-auto px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+      <div class="flex items-center gap-3">
+        <span class="text-lg font-semibold">Chat Playground</span>
+
+        <!-- Credits badge -->
+        <span id="badgeCredits" class="text-sm px-2 py-1 rounded border bg-gray-50">
+          Credits: —
+        </span>
+
+        <!-- Selected Plan Stock badge -->
+        <span id="badgePlanStock" class="text-sm px-2 py-1 rounded border bg-gray-50 hidden">
+          Stock: —
+        </span>
+
+        <!-- Low Stock count (employee only) -->
+        <span id="badgeLowStock" class="text-sm px-2 py-1 rounded border bg-gray-50 hidden">
+          Low stock: —
+        </span>
+      </div>
+
+      <!-- Controls (keep your existing controls; ensure these IDs exist) -->
+      <div class="flex flex-wrap items-center gap-2">
+        <input id="topClientId" type="number" placeholder="Client ID" class="w-28 px-2 py-1 border rounded">
+        <button id="btnLoadClient" class="px-3 py-1 rounded bg-blue-600 text-white">Load Client</button>
+
+        <label class="flex items-center gap-1 text-sm">
+          <input id="toggleEmployee" type="checkbox" class="scale-110">
+          Employee mode
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <main class="container mx-auto px-4 py-6 space-y-6">
+    <div class="grid gap-6 lg:grid-cols-3">
+      <div class="space-y-6">
+        <section class="bg-white border border-gray-200 rounded-lg shadow-sm">
+          <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <h2 class="text-base font-semibold text-gray-800">Available Plans</h2>
+            <button id="btnReloadPlans" class="text-sm px-3 py-1 rounded border border-blue-100 text-blue-600 hover:bg-blue-50">Reload</button>
+          </div>
+          <div id="plansList" class="px-5 py-4 space-y-3">
+            <p class="text-sm text-gray-500">Plans will appear here after loading.</p>
+          </div>
+        </section>
+
+        <section class="bg-white border border-gray-200 rounded-lg shadow-sm">
+          <div class="px-5 py-4 space-y-4">
+            <div>
+              <h2 class="text-base font-semibold text-gray-800">Top-up Credits</h2>
+              <p id="selectedPlanLabel" class="text-sm text-gray-500 mt-1">Select a plan to enable top-up.</p>
+            </div>
+            <div class="space-y-2">
+              <label for="topupRequestId" class="block text-sm font-medium text-gray-600">Request ID (optional)</label>
+              <input id="topupRequestId" type="text" placeholder="e.g. TOPUP-123" class="w-full px-3 py-2 border rounded" autocomplete="off">
+            </div>
+            <button id="btnTopUp" class="w-full px-4 py-2 rounded bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed">Top-up selected plan</button>
+            <p id="topupStatus" class="text-sm text-gray-500"></p>
+          </div>
+        </section>
+
+        <section class="bg-white border border-gray-200 rounded-lg shadow-sm">
+          <div class="px-5 py-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <h2 class="text-base font-semibold text-gray-800">Low Stock Plans</h2>
+              <span class="text-xs uppercase tracking-wide text-gray-400">Employee only</span>
+            </div>
+            <div id="lowStockList" class="space-y-2">
+              <p class="text-sm text-gray-500">Enable employee mode to view low stock alerts.</p>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="space-y-6 lg:col-span-2">
+        <section class="bg-white border border-gray-200 rounded-lg shadow-sm flex flex-col">
+          <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h2 class="text-base font-semibold text-gray-800">Chat Playground</h2>
+            <button id="btnResetChat" class="text-sm px-3 py-1 rounded border border-gray-200 hover:bg-gray-100">Clear chat</button>
+          </div>
+          <div id="chatHistory" class="flex flex-col gap-3 px-5 py-4 h-96 overflow-y-auto bg-gray-50 border-b border-gray-100">
+            <p class="text-sm text-gray-500">Load a client, select a plan, and start chatting.</p>
+          </div>
+          <form id="chatForm" class="px-5 py-4 space-y-4">
+            <div class="grid gap-4 md:grid-cols-3">
+              <div class="md:col-span-1">
+                <label for="chatClientId" class="block text-sm font-medium text-gray-700">Client ID</label>
+                <input id="chatClientId" type="number" min="1" required class="mt-1 w-full px-3 py-2 border rounded" placeholder="123">
+              </div>
+              <div class="md:col-span-1">
+                <label for="chatModel" class="block text-sm font-medium text-gray-700">Model (optional)</label>
+                <input id="chatModel" type="text" class="mt-1 w-full px-3 py-2 border rounded" placeholder="gemma3:1b">
+              </div>
+              <div class="md:col-span-1">
+                <label for="chatOptions" class="block text-sm font-medium text-gray-700">Options JSON (optional)</label>
+                <input id="chatOptions" type="text" class="mt-1 w-full px-3 py-2 border rounded" placeholder='{"temperature":0.7}'>
+              </div>
+            </div>
+            <div>
+              <label for="chatSystemPrompt" class="block text-sm font-medium text-gray-700">System prompt (optional)</label>
+              <textarea id="chatSystemPrompt" rows="2" class="mt-1 w-full px-3 py-2 border rounded" placeholder="Provide high-level instructions..."></textarea>
+            </div>
+            <div>
+              <label for="chatUserPrompt" class="block text-sm font-medium text-gray-700">Message</label>
+              <textarea id="chatUserPrompt" rows="4" required class="mt-1 w-full px-3 py-2 border rounded" placeholder="Ask your question here..."></textarea>
+            </div>
+            <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <p id="chatStatus" class="text-sm text-gray-500">Waiting for your prompt.</p>
+              <button id="btnSendMessage" type="submit" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">Send message</button>
+            </div>
+          </form>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // --- STATE ---
+    let CURRENT_CLIENT_ID = null;
+    let PLANS_CACHE = [];
+    let SELECTED_PLAN_ID = null;
+    let EMPLOYEE_MODE = false;
+
+    const currencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
+    function escapeHtml(value) {
+      if (value === null || value === undefined) return '';
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function formatCurrency(cents) {
+      if (typeof cents !== 'number') return '';
+      return currencyFormatter.format(cents / 100);
+    }
+
+    function parseClientId(value) {
+      const parsed = Number.parseInt(value, 10);
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+    }
+
+    function syncClientIdInputs(value) {
+      const parsed = typeof value === 'number' ? (Number.isFinite(value) && value > 0 ? value : null) : parseClientId(value);
+      const topInput = document.getElementById('topClientId');
+      const chatInput = document.getElementById('chatClientId');
+      CURRENT_CLIENT_ID = parsed;
+      if (parsed) {
+        if (topInput) topInput.value = parsed;
+        if (chatInput) chatInput.value = parsed;
+      } else {
+        if (topInput) topInput.value = '';
+        if (chatInput) chatInput.value = '';
+      }
+      updateTopUpButtonState();
+    }
+
+    // Generic fetch helper (role-aware)
+    async function apiRequestWithRole(url, method = 'GET', body = null, isEmployee = false) {
+      const headers = { 'Content-Type': 'application/json' };
+      if (isEmployee) headers['X-Role'] = 'employee';
+      const cfg = { method, headers };
+      if (body) cfg.body = JSON.stringify(body);
+      try {
+        const res = await fetch(url, cfg);
+        const data = await res.json().catch(() => ({}));
+        return { status: res.status, data };
+      } catch (err) {
+        return { status: 0, data: { error: true, message: err.message } };
+      }
+    }
+
+    // --- BADGES REFRESHERS ---
+    async function refreshWalletBadge() {
+      const badge = document.getElementById('badgeCredits');
+      if (!badge) return;
+      if (!CURRENT_CLIENT_ID) {
+        badge.textContent = 'Credits: —';
+        badge.className = 'text-sm px-2 py-1 rounded border bg-gray-50';
+        return;
+      }
+      const { status, data } = await apiRequestWithRole(`/api/wallets/${CURRENT_CLIENT_ID}`);
+      if (status === 200 && data && typeof data.balance_credits === 'number') {
+        badge.textContent = `Credits: ${data.balance_credits}`;
+        badge.className = 'text-sm px-2 py-1 rounded border bg-green-50 text-green-800';
+      } else {
+        badge.textContent = 'Credits: —';
+        badge.className = 'text-sm px-2 py-1 rounded border bg-gray-50';
+      }
+    }
+
+    function refreshSelectedPlanStockBadge() {
+      const badge = document.getElementById('badgePlanStock');
+      if (!badge) return;
+      if (!SELECTED_PLAN_ID) {
+        badge.classList.add('hidden');
+        return;
+      }
+      const plan = PLANS_CACHE.find((p) => p.id === Number(SELECTED_PLAN_ID));
+      if (!plan) {
+        apiRequestWithRole(`/api/plans/${SELECTED_PLAN_ID}`).then(({ status, data }) => {
+          if (status === 200 && data && typeof data.stock === 'number') {
+            PLANS_CACHE.push(data);
+            setPlanStockBadge(data.stock);
+          } else {
+            badge.classList.add('hidden');
+          }
+        });
+        return;
+      }
+      setPlanStockBadge(plan.stock);
+    }
+
+    function setPlanStockBadge(stock) {
+      const badge = document.getElementById('badgePlanStock');
+      if (!badge) return;
+      badge.classList.remove('hidden');
+      badge.textContent = `Stock: ${stock}`;
+      if (stock < 5) {
+        badge.className = 'text-sm px-2 py-1 rounded border bg-red-100 text-red-800';
+      } else {
+        badge.className = 'text-sm px-2 py-1 rounded border bg-blue-50 text-blue-800';
+      }
+    }
+
+    async function refreshLowStockBadge() {
+      const badge = document.getElementById('badgeLowStock');
+      const list = document.getElementById('lowStockList');
+      if (!badge) return;
+      if (!EMPLOYEE_MODE) {
+        badge.classList.add('hidden');
+        if (list) list.innerHTML = '<p class="text-sm text-gray-500">Enable employee mode to view low stock alerts.</p>';
+        return;
+      }
+      const { status, data } = await apiRequestWithRole('/api/plans/low-stock', 'GET', null, true);
+      if (status === 200 && Array.isArray(data)) {
+        badge.classList.remove('hidden');
+        badge.textContent = `Low stock: ${data.length}`;
+        badge.className = data.length > 0
+          ? 'text-sm px-2 py-1 rounded border bg-orange-100 text-orange-800'
+          : 'text-sm px-2 py-1 rounded border bg-gray-50 text-gray-800';
+        renderLowStockList(data);
+      } else {
+        badge.classList.remove('hidden');
+        badge.textContent = 'Low stock: —';
+        badge.className = 'text-sm px-2 py-1 rounded border bg-gray-50';
+        if (list) list.innerHTML = '<p class="text-sm text-red-500">Unable to fetch low-stock plans.</p>';
+      }
+    }
+
+    function renderLowStockList(plans) {
+      const list = document.getElementById('lowStockList');
+      if (!list) return;
+      if (!Array.isArray(plans) || plans.length === 0) {
+        list.innerHTML = '<p class="text-sm text-gray-500">No plans flagged as low stock.</p>';
+        return;
+      }
+      list.innerHTML = '';
+      plans.forEach((plan) => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between rounded border border-amber-200 bg-amber-50 px-3 py-2';
+        row.innerHTML = `
+          <div>
+            <p class="text-sm font-medium text-amber-900">${escapeHtml(plan.plan_name)} (#${plan.id})</p>
+            <p class="text-xs text-amber-700">Credits: ${plan.amount_credits}</p>
+          </div>
+          <span class="text-sm font-semibold text-amber-900">Stock ${plan.stock}</span>
+        `;
+        list.appendChild(row);
+      });
+    }
+
+    // --- PLAN LIST HELPERS ---
+    function renderPlans(plans) {
+      const container = document.getElementById('plansList');
+      if (!container) return;
+      container.innerHTML = '';
+      if (!Array.isArray(plans) || plans.length === 0) {
+        container.innerHTML = '<p class="text-sm text-gray-500">No plans available right now.</p>';
+        return;
+      }
+      plans.forEach((plan) => {
+        const isSelected = Number(SELECTED_PLAN_ID) === plan.id;
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.dataset.planId = plan.id;
+        card.className = [
+          'w-full text-left border rounded-lg p-4 transition focus:outline-none',
+          isSelected
+            ? 'border-blue-500 ring-2 ring-blue-200 bg-blue-50'
+            : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/40'
+        ].join(' ');
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p class="font-semibold text-gray-800">${escapeHtml(plan.plan_name)}</p>
+              <p class="text-xs uppercase tracking-wide text-gray-400 mt-1">ID #${plan.id}</p>
+              <p class="text-sm text-gray-600 mt-2">${plan.amount_credits} credits · ${formatCurrency(plan.price_cents)}</p>
+            </div>
+            <div class="text-right">
+              <p class="text-sm font-medium text-gray-700">Stock: ${plan.stock}</p>
+              <p class="text-xs text-gray-500 mt-1">${plan.category || 'Credits'}</p>
+            </div>
+          </div>
+        `;
+        card.addEventListener('click', () => onSelectPlan(plan.id));
+        container.appendChild(card);
+      });
+    }
+
+    async function loadPlansForSidebar() {
+      const container = document.getElementById('plansList');
+      if (container) {
+        container.innerHTML = '<p class="text-sm text-gray-500">Loading plans...</p>';
+      }
+      const { status, data } = await apiRequestWithRole('/api/plans');
+      if (status === 200 && Array.isArray(data)) {
+        PLANS_CACHE = data;
+        renderPlans(PLANS_CACHE);
+        refreshSelectedPlanStockBadge();
+      } else if (container) {
+        container.innerHTML = '<p class="text-sm text-red-500">Unable to load plans. Try again later.</p>';
+      }
+      if (EMPLOYEE_MODE) {
+        await refreshLowStockBadge();
+      }
+    }
+
+    function onSelectPlan(planId) {
+      SELECTED_PLAN_ID = Number(planId) || null;
+      renderPlans(PLANS_CACHE);
+      refreshSelectedPlanStockBadge();
+      updateTopUpPanel();
+    }
+
+    // --- TOP-UP FLOW ---
+    function updateTopUpPanel() {
+      const label = document.getElementById('selectedPlanLabel');
+      const plan = PLANS_CACHE.find((p) => p.id === Number(SELECTED_PLAN_ID));
+      if (label) {
+        if (plan) {
+          label.textContent = `${plan.plan_name} (#${plan.id}) · ${plan.amount_credits} credits`;
+          label.className = 'text-sm text-gray-600 mt-1';
+        } else {
+          label.textContent = 'Select a plan to enable top-up.';
+          label.className = 'text-sm text-gray-500 mt-1';
+        }
+      }
+      updateTopUpButtonState();
+    }
+
+    function updateTopUpButtonState() {
+      const btn = document.getElementById('btnTopUp');
+      if (!btn) return;
+      const ready = Boolean(CURRENT_CLIENT_ID) && Boolean(SELECTED_PLAN_ID);
+      btn.disabled = !ready;
+    }
+
+    function showTopUpStatus(message, isError = false) {
+      const statusEl = document.getElementById('topupStatus');
+      if (!statusEl) return;
+      statusEl.textContent = message;
+      statusEl.className = isError ? 'text-sm text-red-600' : 'text-sm text-gray-600';
+    }
+
+    async function topUp(planId) {
+      if (!CURRENT_CLIENT_ID) {
+        showTopUpStatus('Select a client before topping up.', true);
+        return;
+      }
+      if (!planId) {
+        showTopUpStatus('Select a plan before topping up.', true);
+        return;
+      }
+      showTopUpStatus('Processing top-up...');
+      const payload = { plan_id: Number(planId) };
+      const requestIdInput = document.getElementById('topupRequestId');
+      if (requestIdInput) {
+        const requestId = requestIdInput.value.trim();
+        if (requestId) payload.request_id = requestId;
+      }
+      const { status, data } = await apiRequestWithRole(`/api/wallets/${CURRENT_CLIENT_ID}/topups`, 'POST', payload);
+      if (status === 200 && data && !data.error) {
+        showTopUpStatus(`Added ${data.added_credits} credits. Balance: ${data.balance_credits}.`);
+        await refreshWalletBadge();
+        await loadPlansForSidebar();
+      } else {
+        const message = data && data.message ? data.message : 'Top-up failed.';
+        showTopUpStatus(message, true);
+      }
+    }
+
+    // --- CHAT HELPERS ---
+    function appendChatMessage(role, content) {
+      const history = document.getElementById('chatHistory');
+      if (!history) return;
+      if (history.firstElementChild && history.firstElementChild.tagName === 'P') {
+        history.innerHTML = '';
+      }
+      const bubble = document.createElement('div');
+      let classes = 'max-w-full md:max-w-2xl rounded-lg px-4 py-3 shadow';
+      if (role === 'user') {
+        classes += ' self-end bg-blue-600 text-white';
+      } else if (role === 'assistant') {
+        classes += ' self-start bg-white border border-gray-200';
+      } else {
+        classes += ' self-center bg-yellow-100 border border-yellow-200 text-yellow-900';
+      }
+      bubble.className = classes;
+      bubble.innerHTML = `
+        <p class="text-xs uppercase tracking-wide mb-1 opacity-70">${role}</p>
+        <div class="text-sm leading-relaxed whitespace-pre-wrap">${escapeHtml(content)}</div>
+      `;
+      history.appendChild(bubble);
+      history.scrollTop = history.scrollHeight;
+    }
+
+    async function onChatSuccess(respJson) {
+      if (respJson && typeof respJson.wallet_balance === 'number') {
+        const badge = document.getElementById('badgeCredits');
+        if (badge) {
+          badge.textContent = `Credits: ${respJson.wallet_balance}`;
+          badge.className = 'text-sm px-2 py-1 rounded border bg-green-50 text-green-800';
+        }
+      } else {
+        await refreshWalletBadge();
+      }
+      updateTopUpButtonState();
+    }
+
+    // --- EVENT WIRING ---
+    document.getElementById('btnLoadClient').addEventListener('click', async () => {
+      const idInput = document.getElementById('topClientId');
+      const nextId = parseClientId(idInput.value);
+      syncClientIdInputs(nextId);
+      await refreshWalletBadge();
+    });
+
+    document.getElementById('topClientId').addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') {
+        ev.preventDefault();
+        document.getElementById('btnLoadClient').click();
+      }
+    });
+
+    document.getElementById('toggleEmployee').addEventListener('change', async (ev) => {
+      EMPLOYEE_MODE = !!ev.target.checked;
+      await refreshLowStockBadge();
+    });
+
+    document.getElementById('btnReloadPlans').addEventListener('click', () => {
+      loadPlansForSidebar();
+    });
+
+    document.getElementById('btnTopUp').addEventListener('click', async () => {
+      await topUp(SELECTED_PLAN_ID);
+    });
+
+    document.getElementById('chatClientId').addEventListener('change', (ev) => {
+      const value = parseClientId(ev.target.value);
+      syncClientIdInputs(value);
+    });
+
+    document.getElementById('btnResetChat').addEventListener('click', () => {
+      const history = document.getElementById('chatHistory');
+      if (history) {
+        history.innerHTML = '<p class="text-sm text-gray-500">Conversation cleared. Start typing to chat again.</p>';
+      }
+      const statusEl = document.getElementById('chatStatus');
+      if (statusEl) statusEl.textContent = 'Waiting for your prompt.';
+    });
+
+    document.getElementById('chatForm').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const btn = document.getElementById('btnSendMessage');
+      const statusEl = document.getElementById('chatStatus');
+      const clientId = parseClientId(document.getElementById('chatClientId').value);
+      const model = document.getElementById('chatModel').value.trim();
+      const systemPrompt = document.getElementById('chatSystemPrompt').value.trim();
+      const userPrompt = document.getElementById('chatUserPrompt').value.trim();
+      const optionsRaw = document.getElementById('chatOptions').value.trim();
+
+      if (!clientId) {
+        statusEl.textContent = 'Enter a valid client ID.';
+        return;
+      }
+      if (!userPrompt) {
+        statusEl.textContent = 'Write a message to send.';
+        return;
+      }
+
+      const messages = [];
+      if (systemPrompt) {
+        messages.push({ role: 'system', content: systemPrompt });
+      }
+      messages.push({ role: 'user', content: userPrompt });
+
+      const payload = { client_id: clientId, messages, stream: false };
+      if (model) payload.model = model;
+
+      if (optionsRaw) {
+        try {
+          payload.options = JSON.parse(optionsRaw);
+        } catch (err) {
+          statusEl.textContent = `Options JSON inválido: ${err.message}`;
+          return;
+        }
+      }
+
+      btn.disabled = true;
+      statusEl.textContent = 'Sending message...';
+      appendChatMessage('user', userPrompt);
+      document.getElementById('chatUserPrompt').value = '';
+
+      syncClientIdInputs(clientId);
+
+      const { status, data } = await apiRequestWithRole('/api/chat/ollama', 'POST', payload);
+      btn.disabled = false;
+
+      if (status === 200 && data && !data.error) {
+        appendChatMessage('assistant', data.reply || '');
+        statusEl.textContent = `Charged ${data.credits_charged ?? '-'} credits · Balance ${data.wallet_balance ?? '-'}`;
+        await onChatSuccess(data);
+      } else {
+        const message = data && (data.message || data.error) ? (data.message || data.error) : 'Chat failed.';
+        appendChatMessage('system', message);
+        statusEl.textContent = message;
+        await refreshWalletBadge();
+      }
+    });
+
+    // --- INITIAL LOAD ---
+    updateTopUpPanel();
+    loadPlansForSidebar();
+    refreshLowStockBadge();
+    refreshWalletBadge();
+  </script>
+</body>
+</html>

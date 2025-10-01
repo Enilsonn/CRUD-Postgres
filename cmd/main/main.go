@@ -130,6 +130,18 @@ func main() {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		http.ServeFile(w, r, "./ui/index.html")
 	})
+	r.Get("/ui/chat", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		http.ServeFile(w, r, "./ui/chat.html")
+	})
+	r.Get("/ui/chat/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		http.ServeFile(w, r, "./ui/chat.html")
+	})
+	r.Get("/ui/chat.html", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		http.ServeFile(w, r, "./ui/chat.html")
+	})
 
 	serverPort := configs.GetServerPort()
 	log.Printf("Server starting on port %s...", serverPort)

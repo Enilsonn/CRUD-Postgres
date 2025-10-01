@@ -1,20 +1,21 @@
 package model
 
 import (
+	"database/sql"
 	"encoding/json"
 	"time"
 )
 
 type Client struct {
-	ID               int64     `json:"id"`
-	Name             string    `json:"name"`
-	Email            string    `json:"email"`
-	Phone            string    `json:"phone"`
-	Status           bool      `json:"status"`
-	RegistrationData time.Time `json:"registration_data"`
-	SupportsFlamengo bool      `json:"supports_flamengo"`
-	WatchesOnePiece  bool      `json:"watches_one_piece"`
-	City             string    `json:"city"`
+	ID               int64          `json:"id"`
+	Name             string         `json:"name"`
+	Email            string         `json:"email"`
+	Phone            string         `json:"phone"`
+	Status           bool           `json:"status"`
+	RegistrationData time.Time      `json:"registration_data"`
+	SupportsFlamengo bool           `json:"supports_flamengo"`
+	WatchesOnePiece  bool           `json:"watches_one_piece"`
+	City             sql.NullString `json:"city"`
 }
 
 func NewCliente(name, email, phone string) *Client {
