@@ -37,6 +37,15 @@
                                 <input type="text" id="clientName" placeholder="Nome" required class="w-full px-3 py-2 border rounded">
                                 <input type="email" id="clientEmail" placeholder="E-mail" required class="w-full px-3 py-2 border rounded">
                                 <input type="tel" id="clientPhone" placeholder="Telefone" required class="w-full px-3 py-2 border rounded">
+                                <div class="flex items-center space-x-2">
+                                    <input type="checkbox" id="clientSupportsFlamengo" class="h-4 w-4">
+                                    <label for="clientSupportsFlamengo" class="text-sm text-gray-700">Torcedor do Flamengo</label>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <input type="checkbox" id="clientWatchesOnePiece" class="h-4 w-4">
+                                    <label for="clientWatchesOnePiece" class="text-sm text-gray-700">Assiste One Piece</label>
+                                </div>
+                                <input type="text" id="clientCity" placeholder="Cidade" class="w-full px-3 py-2 border rounded">
                                 <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Criar Cliente</button>
                             </form>
                         </div>
@@ -63,6 +72,17 @@
                                 <input type="text" id="updateClientName" placeholder="Nome" class="w-full px-3 py-2 border rounded mb-2">
                                 <input type="email" id="updateClientEmail" placeholder="E-mail" class="w-full px-3 py-2 border rounded mb-2">
                                 <input type="tel" id="updateClientPhone" placeholder="Telefone" class="w-full px-3 py-2 border rounded mb-2">
+                                <select id="updateClientSupportsFlamengo" class="w-full px-3 py-2 border rounded mb-2">
+                                    <option value="">Torcedor do Flamengo (sem alteração)</option>
+                                    <option value="true">Sim</option>
+                                    <option value="false">Não</option>
+                                </select>
+                                <select id="updateClientWatchesOnePiece" class="w-full px-3 py-2 border rounded mb-2">
+                                    <option value="">Assiste One Piece (sem alteração)</option>
+                                    <option value="true">Sim</option>
+                                    <option value="false">Não</option>
+                                </select>
+                                <input type="text" id="updateClientCity" placeholder="Cidade" class="w-full px-3 py-2 border rounded mb-2">
                                 <button onclick="updateClient()" class="w-full bg-yellow-600 text-white py-2 rounded hover:bg-yellow-700">Atualizar Cliente</button>
                             </div>
                             <div>
@@ -137,6 +157,123 @@
                     <div class="mt-6">
                         <h3 class="font-semibold mb-2">Resultados:</h3>
                         <pre id="planResults" class="bg-gray-100 p-4 rounded text-sm max-h-64 overflow-auto"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Plan Filters Section -->
+        <div class="bg-white rounded-lg shadow-md mb-6">
+            <button class="accordion-toggle w-full px-6 py-4 text-left font-semibold text-lg text-gray-800 bg-teal-50 hover:bg-teal-100 rounded-t-lg focus:outline-none" data-target="planFilters">
+                Buscar Planos (com filtros)
+                <span class="float-right">▼</span>
+            </button>
+            <div id="planFilters" class="accordion-content">
+                <div class="p-6 space-y-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="border rounded p-4 space-y-3">
+                            <h3 class="font-semibold">Filtros</h3>
+                            <input type="text" id="filterPlanName" placeholder="Nome contém" class="w-full px-3 py-2 border rounded">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <input type="number" id="filterMinPrice" placeholder="Preço mínimo (centavos)" class="w-full px-3 py-2 border rounded">
+                                <input type="number" id="filterMaxPrice" placeholder="Preço máximo (centavos)" class="w-full px-3 py-2 border rounded">
+                            </div>
+                            <input type="text" id="filterCategory" placeholder="Categoria" class="w-full px-3 py-2 border rounded">
+                            <select id="filterManufacturedInMari" class="w-full px-3 py-2 border rounded">
+                                <option value="">Fabricado em Mari? (qualquer)</option>
+                                <option value="true">Sim</option>
+                                <option value="false">Não</option>
+                            </select>
+                            <div class="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
+                                <button onclick="searchPlansWithFilters()" class="flex-1 bg-teal-600 text-white py-2 rounded hover:bg-teal-700">Buscar Planos</button>
+                                <button onclick="getLowStockPlans()" class="flex-1 bg-amber-600 text-white py-2 rounded hover:bg-amber-700">Baixo Estoque (employee)</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold mb-2">Resultados:</h3>
+                        <pre id="planSearchResults" class="bg-gray-100 p-4 rounded text-sm max-h-64 overflow-auto"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orders Section -->
+        <div class="bg-white rounded-lg shadow-md mb-6">
+            <button class="accordion-toggle w-full px-6 py-4 text-left font-semibold text-lg text-gray-800 bg-indigo-50 hover:bg-indigo-100 rounded-t-lg focus:outline-none" data-target="orders">
+                Pedidos
+                <span class="float-right">▼</span>
+            </button>
+            <div id="orders" class="accordion-content">
+                <div class="p-6 space-y-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="border rounded p-4 space-y-3">
+                            <h3 class="font-semibold">Criar Pedido</h3>
+                            <input type="number" id="orderClientId" placeholder="ID do Cliente" class="w-full px-3 py-2 border rounded">
+                            <input type="number" id="orderSellerId" value="1" placeholder="ID do Seller" class="w-full px-3 py-2 border rounded">
+                            <select id="orderPaymentMethod" class="w-full px-3 py-2 border rounded">
+                                <option value="PIX">PIX</option>
+                                <option value="CARD">Cartão</option>
+                                <option value="BOLETO">Boleto</option>
+                                <option value="BERRIES">Berries</option>
+                            </select>
+                            <div class="border rounded p-3 space-y-3 bg-slate-50">
+                                <h4 class="font-semibold text-sm">Itens do Pedido</h4>
+                                <div class="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
+                                    <input type="number" id="orderPlanId" placeholder="Plan ID" class="flex-1 px-3 py-2 border rounded">
+                                    <input type="number" id="orderQuantity" placeholder="Qtd" class="flex-1 px-3 py-2 border rounded">
+                                    <button type="button" onclick="addOrderItem()" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Adicionar</button>
+                                </div>
+                                <ul id="orderItemsList" class="text-sm text-gray-700 space-y-1"></ul>
+                            </div>
+                            <button onclick="createOrder()" class="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700">Criar Pedido</button>
+                        </div>
+
+                        <div class="border rounded p-4 space-y-4">
+                            <div class="space-y-2">
+                                <h3 class="font-semibold">Finalizar Pedido</h3>
+                                <input type="number" id="finalizeOrderId" placeholder="ID do Pedido" class="w-full px-3 py-2 border rounded">
+                                <button onclick="finalizeOrder()" class="w-full bg-emerald-600 text-white py-2 rounded hover:bg-emerald-700">Finalizar</button>
+                            </div>
+                            <div class="space-y-2">
+                                <h3 class="font-semibold">Pedidos por Cliente</h3>
+                                <input type="number" id="listOrdersClientId" placeholder="ID do Cliente" class="w-full px-3 py-2 border rounded">
+                                <button onclick="listOrdersByClient()" class="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700">Consultar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="font-semibold">Resultados:</h3>
+                            <button onclick="resetOrderItems()" class="text-sm text-indigo-600 hover:underline">Limpar Itens</button>
+                        </div>
+                        <pre id="orderResults" class="bg-gray-100 p-4 rounded text-sm max-h-64 overflow-auto"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports Section -->
+        <div class="bg-white rounded-lg shadow-md mb-6">
+            <button class="accordion-toggle w-full px-6 py-4 text-left font-semibold text-lg text-gray-800 bg-rose-50 hover:bg-rose-100 rounded-t-lg focus:outline-none" data-target="reports">
+                Relatórios
+                <span class="float-right">▼</span>
+            </button>
+            <div id="reports" class="accordion-content">
+                <div class="p-6 space-y-4">
+                    <div class="border rounded p-4 space-y-3">
+                        <h3 class="font-semibold">Vendas Mensais por Seller</h3>
+                        <label class="block text-sm text-gray-600" for="reportMonth">Mês (YYYY-MM)</label>
+                        <input type="month" id="reportMonth" class="w-full px-3 py-2 border rounded">
+                        <div class="flex space-x-2">
+                            <button onclick="fetchMonthlyReport()" class="flex-1 bg-rose-600 text-white py-2 rounded hover:bg-rose-700">Buscar</button>
+                            <button onclick="fetchMonthlyReport(true)" class="flex-1 bg-gray-600 text-white py-2 rounded hover:bg-gray-700">Listar Todos</button>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold mb-2">Resultados:</h3>
+                        <pre id="reportResults" class="bg-gray-100 p-4 rounded text-sm max-h-64 overflow-auto"></pre>
                     </div>
                 </div>
             </div>
@@ -251,35 +388,78 @@
         });
 
         // API Helper function
-        async function apiRequest(url, method = 'GET', body = null) {
+        async function apiRequest(url, method = 'GET', body = null, headers = {}) {
             try {
+                const mergedHeaders = Object.assign({
+                    'Content-Type': 'application/json',
+                }, headers);
+
                 const config = {
                     method,
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
+                    headers: mergedHeaders,
                 };
-                
-                if (body) {
+
+                if (body !== null && body !== undefined) {
                     config.body = JSON.stringify(body);
                 }
-                
+
                 const response = await fetch(url, config);
-                const data = await response.json();
+                const text = await response.text();
+                let data = null;
+                if (text) {
+                    try {
+                        data = JSON.parse(text);
+                    } catch (parseError) {
+                        data = text;
+                    }
+                }
                 return { status: response.status, data };
             } catch (error) {
                 return { error: error.message };
             }
         }
 
+        const orderItems = [];
+
+        function renderOrderItems() {
+            const list = document.getElementById('orderItemsList');
+            if (!list) return;
+            list.innerHTML = '';
+            if (orderItems.length === 0) {
+                const empty = document.createElement('li');
+                empty.textContent = 'Nenhum item adicionado.';
+                empty.className = 'text-gray-500 italic';
+                list.appendChild(empty);
+                return;
+            }
+            orderItems.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.textContent = `#${index + 1} - Plano ${item.plan_id} x ${item.quantity}`;
+                list.appendChild(li);
+            });
+        }
+
+        function resetOrderItems() {
+            orderItems.splice(0, orderItems.length);
+            renderOrderItems();
+        }
+
+        renderOrderItems();
+
         // Client Functions
         document.getElementById('createClientForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const result = await apiRequest('/api/clients', 'POST', {
+            const payload = {
                 name: document.getElementById('clientName').value,
                 email: document.getElementById('clientEmail').value,
-                phone: document.getElementById('clientPhone').value
-            });
+                phone: document.getElementById('clientPhone').value,
+                supports_flamengo: document.getElementById('clientSupportsFlamengo').checked,
+                watches_one_piece: document.getElementById('clientWatchesOnePiece').checked,
+            };
+            const city = document.getElementById('clientCity').value.trim();
+            if (city) payload.city = city;
+
+            const result = await apiRequest('/api/clients', 'POST', payload);
             document.getElementById('clientResults').textContent = JSON.stringify(result, null, 2);
             if (result.data && !result.data.error) {
                 e.target.reset();
@@ -303,6 +483,9 @@
             const name = document.getElementById('updateClientName').value;
             const email = document.getElementById('updateClientEmail').value;
             const phone = document.getElementById('updateClientPhone').value;
+            const supportsFlag = document.getElementById('updateClientSupportsFlamengo').value;
+            const watchesFlag = document.getElementById('updateClientWatchesOnePiece').value;
+            const city = document.getElementById('updateClientCity').value;
             
             if (!id) return;
             
@@ -310,6 +493,9 @@
             if (name) body.name = name;
             if (email) body.email = email;
             if (phone) body.phone = phone;
+            if (supportsFlag !== '') body.supports_flamengo = supportsFlag === 'true';
+            if (watchesFlag !== '') body.watches_one_piece = watchesFlag === 'true';
+            if (city) body.city = city;
             
             const result = await apiRequest(`/api/clients/${id}`, 'PUT', body);
             document.getElementById('clientResults').textContent = JSON.stringify(result, null, 2);
@@ -378,6 +564,108 @@
             if (result.status === 204) {
                 document.getElementById('deletePlanId').value = '';
             }
+        }
+
+        async function searchPlansWithFilters() {
+            const params = new URLSearchParams();
+            const name = document.getElementById('filterPlanName').value.trim();
+            const minPrice = document.getElementById('filterMinPrice').value;
+            const maxPrice = document.getElementById('filterMaxPrice').value;
+            const category = document.getElementById('filterCategory').value.trim();
+            const manufactured = document.getElementById('filterManufacturedInMari').value;
+
+            if (name) params.append('name', name);
+            if (minPrice) params.append('min_price_cents', minPrice);
+            if (maxPrice) params.append('max_price_cents', maxPrice);
+            if (category) params.append('category', category);
+            if (manufactured !== '') params.append('manufactured_in_mari', manufactured);
+
+            const query = params.toString();
+            const url = query ? `/api/plans/search?${query}` : '/api/plans/search';
+
+            const result = await apiRequest(url);
+            document.getElementById('planSearchResults').textContent = JSON.stringify(result, null, 2);
+        }
+
+        async function getLowStockPlans() {
+            const result = await apiRequest('/api/plans/low-stock', 'GET', null, { 'X-Role': 'employee' });
+            document.getElementById('planSearchResults').textContent = JSON.stringify(result, null, 2);
+        }
+
+        function addOrderItem() {
+            const planInput = document.getElementById('orderPlanId');
+            const qtyInput = document.getElementById('orderQuantity');
+            const planId = parseInt(planInput.value, 10);
+            const quantity = parseInt(qtyInput.value, 10);
+
+            if (!planId || !quantity || quantity <= 0) {
+                alert('Informe um plano e quantidade válida.');
+                return;
+            }
+
+            orderItems.push({ plan_id: planId, quantity });
+            renderOrderItems();
+            planInput.value = '';
+            qtyInput.value = '';
+        }
+
+        async function createOrder() {
+            const clientId = parseInt(document.getElementById('orderClientId').value, 10);
+            const sellerId = parseInt(document.getElementById('orderSellerId').value, 10);
+            const paymentMethod = document.getElementById('orderPaymentMethod').value;
+
+            if (!clientId || !sellerId) {
+                alert('Cliente e seller são obrigatórios.');
+                return;
+            }
+            if (orderItems.length === 0) {
+                alert('Adicione pelo menos um item ao pedido.');
+                return;
+            }
+
+            const payload = {
+                client_id: clientId,
+                seller_id: sellerId,
+                payment_method: paymentMethod,
+                items: orderItems.map(item => ({ plan_id: item.plan_id, quantity: item.quantity })),
+            };
+
+            const result = await apiRequest('/api/orders', 'POST', payload);
+            document.getElementById('orderResults').textContent = JSON.stringify(result, null, 2);
+            if (result.status === 201 && result.data && !result.data.error) {
+                resetOrderItems();
+            }
+        }
+
+        async function finalizeOrder() {
+            const orderId = document.getElementById('finalizeOrderId').value;
+            if (!orderId) return;
+
+            const result = await apiRequest(`/api/orders/${orderId}/finalize`, 'POST');
+            document.getElementById('orderResults').textContent = JSON.stringify(result, null, 2);
+        }
+
+        async function listOrdersByClient() {
+            const clientId = document.getElementById('listOrdersClientId').value;
+            if (!clientId) return;
+
+            const result = await apiRequest(`/api/clients/${clientId}/orders`);
+            document.getElementById('orderResults').textContent = JSON.stringify(result, null, 2);
+        }
+
+        async function fetchMonthlyReport(fetchAll = false) {
+            let url = '/api/reports/sales/monthly';
+            if (!fetchAll) {
+                const monthInput = document.getElementById('reportMonth').value;
+                if (!monthInput) {
+                    alert('Informe um mês no formato YYYY-MM ou use "Listar Todos".');
+                    return;
+                }
+                url += `?month=${monthInput}`;
+            }
+
+            const result = await apiRequest(url, 'GET', null, { 'X-Role': 'employee' });
+            document.getElementById('reportResults').textContent = JSON.stringify(result, null, 2);
         }
 
         // Wallet Functions
