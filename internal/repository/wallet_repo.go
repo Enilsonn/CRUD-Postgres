@@ -136,7 +136,7 @@ func (r *WalletRepository) ProcessTopUp(ctx context.Context, clientID int64, cre
 	return newBalance, nil
 }
 
-func (r *WalletRepository) ProcessUsage(ctx context.Context, clientID int64, model string, promptTokens, completionTokens, creditsSpent int64) (int64, error) {
+func (r *WalletRepository) ProcessUsage(ctx context.Context, clientID int64, model string, promptTokens, completionTokens, creditsSpent int64, meta map[string]any) (int64, error) {
 	tx, err := r.db.Begin()
 	if err != nil {
 		return 0, fmt.Errorf("failed to begin transaction: %w", err)
@@ -174,13 +174,15 @@ func (r *WalletRepository) ProcessUsage(ctx context.Context, clientID int64, mod
 		return 0, fmt.Errorf("failed to insert usage event: %w", err)
 	}
 
-	// Create metadata
-	meta := map[string]interface{}{
-		"model":             model,
-		"prompt_tokens":     promptTokens,
-		"completion_tokens": completionTokens,
+	// Create metadata snapshot for the ledger entry
+	metaCopy := make(map[string]any, len(meta)+3)
+	for k, v := range meta {
+		metaCopy[k] = v
 	}
-	metaBytes, _ := json.Marshal(meta)
+	metaCopy["model"] = model
+	metaCopy["prompt_tokens"] = promptTokens
+	metaCopy["completion_tokens"] = completionTokens
+	metaBytes, _ := json.Marshal(metaCopy)
 
 	// Insert into ledger (negative for usage)
 	sqlQuerie = `

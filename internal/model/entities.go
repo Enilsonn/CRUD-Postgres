@@ -74,6 +74,16 @@ type UsageEvent struct {
 	CreatedAt        time.Time `json:"created_at"`
 }
 
+type ModelPricing struct {
+	ID                     int64     `json:"id"`
+	Pattern                string    `json:"pattern"`
+	CreditsPer1KPrompt     float64   `json:"credits_per_1k_prompt"`
+	CreditsPer1KCompletion float64   `json:"credits_per_1k_completion"`
+	Priority               int       `json:"priority"`
+	Active                 bool      `json:"active"`
+	UpdatedAt              time.Time `json:"updated_at"`
+}
+
 type Seller struct {
 	ID   int64  `json:"id"`
 	Name string `json:"name"`

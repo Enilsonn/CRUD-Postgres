@@ -40,17 +40,20 @@ func main() {
 	sellerRepository := repository.NewSellerRepository(conn)
 	orderRepository := repository.NewOrderRepository(conn)
 	reportRepository := repository.NewReportRepository(conn)
+	pricingRepository := repository.NewPricingRepository(conn)
 
 	planService := service.NewPlanService(productRepository)
 	orderService := service.NewOrderService(orderRepository, clientRepository, sellerRepository, productRepository, walletRepository)
 	reportService := service.NewReportService(reportRepository)
+	pricingService := service.NewPricingService(pricingRepository)
 
 	clientHandler := controller.NewClientHandler(clientRepository)
 	productHandler := controller.NewProductHandler(productRepository, planService)
-	walletHandler := controller.NewWalletHandler(walletRepository, productRepository)
+	walletHandler := controller.NewWalletHandler(walletRepository, productRepository, pricingService)
 	orderHandler := controller.NewOrderHandler(orderService)
 	reportHandler := controller.NewReportHandler(reportService)
-	chatHandler := controller.NewChatHandler(walletRepository)
+	pricingHandler := controller.NewPricingHandler(pricingRepository)
+	chatHandler := controller.NewChatHandler(walletRepository, pricingService)
 
 	r := chi.NewRouter()
 
@@ -107,6 +110,11 @@ func main() {
 
 	r.Post("/api/usage", walletHandler.ProcessUsage)
 	r.Post("/api/chat/ollama", chatHandler.ChatOllama)
+
+	r.Route("/api/pricing", func(r chi.Router) {
+		r.Get("/", pricingHandler.ListActive)
+		r.With(utils.RequireEmployee).Post("/", pricingHandler.Upsert)
+	})
 
 	r.With(utils.RequireEmployee).Get("/api/reports/sales/monthly", reportHandler.SellerMonthlySales)
 

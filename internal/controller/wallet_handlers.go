@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/Enilsonn/CRUD-Postgres/internal/repository"
+	"github.com/Enilsonn/CRUD-Postgres/internal/service"
 	"github.com/Enilsonn/CRUD-Postgres/internal/utils"
 	"github.com/go-chi/chi/v5"
 )
@@ -15,12 +16,14 @@ import (
 type WalletHandler struct {
 	WalletRepo *repository.WalletRepository
 	PlanRepo   *repository.ProductRepository
+	PricingSvc *service.PricingService
 }
 
-func NewWalletHandler(walletRepo *repository.WalletRepository, planRepo *repository.ProductRepository) *WalletHandler {
+func NewWalletHandler(walletRepo *repository.WalletRepository, planRepo *repository.ProductRepository, pricingSvc *service.PricingService) *WalletHandler {
 	return &WalletHandler{
 		WalletRepo: walletRepo,
 		PlanRepo:   planRepo,
+		PricingSvc: pricingSvc,
 	}
 }
 
@@ -174,12 +177,33 @@ func (h *WalletHandler) ProcessUsage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Calculate credits needed (1 credit per 1000 tokens, rounded up)
+	// Calculate credits to deduct, using dynamic pricing when available
 	totalTokens := usage.PromptTokens + usage.CompletionTokens
 	creditsNeeded := int64(math.Ceil(float64(totalTokens) / 1000.0))
+	meta := map[string]any{
+		"model": usage.Model,
+		"ppk":   1.0,
+		"cpk":   1.0,
+	}
+
+	if h.PricingSvc != nil {
+		calcCredits, ppk, cpk, err := h.PricingSvc.ComputeCredits(ctx, usage.Model, usage.PromptTokens, usage.CompletionTokens)
+		if err != nil {
+			utils.EncodeJson(w, r, http.StatusInternalServerError,
+				map[string]any{
+					"error":   true,
+					"code":    "PRICING_FAILED",
+					"message": err.Error(),
+				})
+			return
+		}
+		creditsNeeded = calcCredits
+		meta["ppk"] = ppk
+		meta["cpk"] = cpk
+	}
 
 	// Process usage transaction
-	newBalance, err := h.WalletRepo.ProcessUsage(ctx, usage.ClientID, usage.Model, usage.PromptTokens, usage.CompletionTokens, creditsNeeded)
+	newBalance, err := h.WalletRepo.ProcessUsage(ctx, usage.ClientID, usage.Model, usage.PromptTokens, usage.CompletionTokens, creditsNeeded, meta)
 	if err != nil {
 		if err.Error() == "insufficient credits" {
 			utils.EncodeJson(w, r, http.StatusConflict,

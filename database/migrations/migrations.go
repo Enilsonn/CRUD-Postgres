@@ -54,6 +54,26 @@ func Up(db *sql.DB) error {
 			credits_spent    BIGINT      NOT NULL DEFAULT 0,
 			created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 		);`,
+
+		`CREATE TABLE IF NOT EXISTS model_pricing(
+			id BIGSERIAL PRIMARY KEY,
+			pattern TEXT NOT NULL,
+			credits_per_1k_prompt NUMERIC NOT NULL,
+			credits_per_1k_completion NUMERIC NOT NULL,
+			priority INT NOT NULL DEFAULT 100,
+			active BOOLEAN NOT NULL DEFAULT TRUE,
+			updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+		);`,
+
+		`CREATE INDEX IF NOT EXISTS idx_model_pricing_active_priority ON model_pricing(active, priority);`,
+
+		`INSERT INTO model_pricing(pattern,credits_per_1k_prompt,credits_per_1k_completion,priority)
+		SELECT '^gemma3:1b$',1.0,1.0,10
+		WHERE NOT EXISTS (SELECT 1 FROM model_pricing);`,
+
+		`INSERT INTO model_pricing(pattern,credits_per_1k_prompt,credits_per_1k_completion,priority)
+		SELECT '^llama3\\.1:8b.*$',1.2,1.5,20
+		WHERE NOT EXISTS (SELECT 1 FROM model_pricing WHERE pattern='^llama3\\.1:8b.*$');`,
 	}
 
 	for i, query := range queries {

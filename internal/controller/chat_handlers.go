@@ -11,6 +11,7 @@ import (
 
 	"github.com/Enilsonn/CRUD-Postgres/cmd/configs"
 	"github.com/Enilsonn/CRUD-Postgres/internal/repository"
+	"github.com/Enilsonn/CRUD-Postgres/internal/service"
 	"github.com/Enilsonn/CRUD-Postgres/internal/utils"
 )
 
@@ -18,13 +19,15 @@ import (
 type ChatHandler struct {
 	WalletRepo *repository.WalletRepository
 	HTTPClient *http.Client
+	PricingSvc *service.PricingService
 }
 
 // NewChatHandler wires the dependencies required for chat operations.
-func NewChatHandler(walletRepo *repository.WalletRepository) *ChatHandler {
+func NewChatHandler(walletRepo *repository.WalletRepository, pricingSvc *service.PricingService) *ChatHandler {
 	return &ChatHandler{
 		WalletRepo: walletRepo,
 		HTTPClient: &http.Client{Timeout: 120 * time.Second},
+		PricingSvc: pricingSvc,
 	}
 }
 
@@ -197,9 +200,33 @@ func (h *ChatHandler) ChatOllama(w http.ResponseWriter, r *http.Request) {
 	promptTokens := oResp.PromptEvalCount
 	completionTokens := oResp.EvalCount
 	totalTokens := promptTokens + completionTokens
-	credits := int64(math.Ceil(float64(totalTokens) / 1000.0))
+	var (
+		credits int64
+		ppk     float64 = 1.0
+		cpk     float64 = 1.0
+	)
 
-	newBalance, err := h.WalletRepo.ProcessUsage(ctx, req.ClientID, model, promptTokens, completionTokens, credits)
+	if h.PricingSvc != nil {
+		credits, ppk, cpk, err = h.PricingSvc.ComputeCredits(ctx, model, promptTokens, completionTokens)
+		if err != nil {
+			utils.EncodeJson(w, r, http.StatusInternalServerError, map[string]any{
+				"error":   true,
+				"code":    "PRICING_FAILED",
+				"message": err.Error(),
+			})
+			return
+		}
+	} else {
+		credits = int64(math.Ceil(float64(totalTokens) / 1000.0))
+	}
+
+	meta := map[string]any{
+		"model": model,
+		"ppk":   ppk,
+		"cpk":   cpk,
+	}
+
+	newBalance, err := h.WalletRepo.ProcessUsage(ctx, req.ClientID, model, promptTokens, completionTokens, credits, meta)
 	if err != nil {
 		switch err.Error() {
 		case "insufficient credits":
