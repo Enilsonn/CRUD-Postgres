@@ -10,6 +10,7 @@ import (
 	"github.com/Enilsonn/CRUD-Postgres/database/migrations"
 	"github.com/Enilsonn/CRUD-Postgres/internal/controller"
 	"github.com/Enilsonn/CRUD-Postgres/internal/repository"
+	"github.com/Enilsonn/CRUD-Postgres/internal/service"
 	"github.com/Enilsonn/CRUD-Postgres/internal/utils"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -36,10 +37,19 @@ func main() {
 	clientRepository := repository.NewClientRepository(conn)
 	productRepository := repository.NewProductRepository(conn)
 	walletRepository := repository.NewWalletRepository(conn)
+	sellerRepository := repository.NewSellerRepository(conn)
+	orderRepository := repository.NewOrderRepository(conn)
+	reportRepository := repository.NewReportRepository(conn)
+
+	planService := service.NewPlanService(productRepository)
+	orderService := service.NewOrderService(orderRepository, clientRepository, sellerRepository, productRepository, walletRepository)
+	reportService := service.NewReportService(reportRepository)
 
 	clientHandler := controller.NewClientHandler(clientRepository)
-	productHandler := controller.NewProductHandler(productRepository)
+	productHandler := controller.NewProductHandler(productRepository, planService)
 	walletHandler := controller.NewWalletHandler(walletRepository, productRepository)
+	orderHandler := controller.NewOrderHandler(orderService)
+	reportHandler := controller.NewReportHandler(reportService)
 
 	r := chi.NewRouter()
 
@@ -73,11 +83,20 @@ func main() {
 	r.Route("/api/plans", func(r chi.Router) {
 		r.Post("/", productHandler.CreateClientProduct)
 		r.Get("/", productHandler.GetAllClientProduct)
-		r.Get("/{id}", productHandler.GetProductByID)
+		r.Get("/search", productHandler.SearchPlans)
+		r.With(utils.RequireEmployee).Get("/low-stock", productHandler.LowStock)
 		r.Get("/name/{name}", productHandler.GetClientProductByName)
+		r.Get("/{id}", productHandler.GetProductByID)
 		r.Put("/{id}", productHandler.UpdateClientProduct)
 		r.Delete("/{id}", productHandler.DeleteClientProduct)
 	})
+
+	r.Route("/api/orders", func(r chi.Router) {
+		r.Post("/", orderHandler.CreateOrder)
+		r.Post("/{id}/finalize", orderHandler.FinalizeOrder)
+	})
+
+	r.Get("/api/clients/{id}/orders", orderHandler.ListClientOrders)
 
 	r.Route("/api/wallets", func(r chi.Router) {
 		r.Get("/{client_id}", walletHandler.GetWalletBalance)
@@ -86,6 +105,8 @@ func main() {
 	})
 
 	r.Post("/api/usage", walletHandler.ProcessUsage)
+
+	r.With(utils.RequireEmployee).Get("/api/reports/sales/monthly", reportHandler.SellerMonthlySales)
 
 	// Serve the admin dashboard
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
